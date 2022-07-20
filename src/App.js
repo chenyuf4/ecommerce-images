@@ -1,5 +1,5 @@
 import { Canvas } from "@react-three/fiber";
-import { Suspense, useState } from "react";
+import { Suspense } from "react";
 import { PerspectiveCamera } from "@react-three/drei";
 import "./App.scss";
 import ListView from "./components/ListView/ListView";
@@ -16,10 +16,8 @@ function App() {
   });
   const numImages = imagesArr.length;
   const scrollLimit = (numImages - 1) * (IMAGE_WIDTH_SMALL + IMAGE_GAP_SMALL);
-  const [isScrolling, setIsScrolling] = useState(false);
   const onWheelHandler = useCallback(
     (e) => {
-      setIsScrolling(true);
       const { pixelY } = normalizeWheel(e);
       const relativeSpeed = Math.min(Math.abs(pixelY), 100);
       const scrollSpeed = relativeSpeed * (relativeSpeed < 40 ? 0.005 : 0.018);
@@ -66,12 +64,8 @@ function App() {
             fov={75}
           />
           <color attach="background" args={["#ffffff"]} />
-          <ListView
-            scrollPosRef={scrollPosRef}
-            isScrolling={isScrolling}
-            setIsScrolling={setIsScrolling}
-          />
-          <ProgressBar scrollPosRef={scrollPosRef} isScrolling={isScrolling} />
+          <ListView scrollPosRef={scrollPosRef} />
+          <ProgressBar scrollPosRef={scrollPosRef} />
         </Suspense>
       </Canvas>
     </>

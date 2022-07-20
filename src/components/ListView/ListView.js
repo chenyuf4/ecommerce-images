@@ -11,9 +11,9 @@ import {
   IMAGE_DIMENSION,
 } from "util/utilFormat";
 import useRefMounted from "util/useRefMounted";
-import { useThree } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import "./ImageShaderMaterial";
-import { useCallback, useRef, useEffect, useState } from "react";
+import { useCallback, useRef } from "react";
 const CENTER_IMAGE_LERP_SLOW = 0.18;
 const CENTER_IMAGE_LERP_FAST = 0.3;
 const SmallImageBlock = ({ url, index }) => {
@@ -62,20 +62,17 @@ const CenterImageBlock = ({ url, index }) => {
   );
 };
 
-const ListView = ({ scrollPosRef, isScrolling, setIsScrolling }) => {
+const ListView = ({ scrollPosRef }) => {
   const { viewport } = useThree();
   const { width, height } = viewport;
   const listViewGroupRef = useRef();
   const mainViewGroupRef = useRef();
-  const animationRef = useRef(null);
   const mounted = useRefMounted();
   const activeImageRef = useRef(0);
-  const centerAnimationRef = useRef(null);
   const centerImagePosRef = useRef({
     targetZ: 0,
     currentZ: 0,
   });
-  const [activeUpdating, setActiveUpdating] = useState(false);
   const update = useCallback(() => {
     const { current, target } = scrollPosRef.current;
     const lerpValue = scrollPosRef.current.scrollSpeed >= 45 ? 0.1 : 0.2;
@@ -107,18 +104,11 @@ const ListView = ({ scrollPosRef, isScrolling, setIsScrolling }) => {
         imageMesh.material.uniforms.activeImage.value = newActiveImage;
       });
       centerImagePosRef.current.targetZ = newActiveImage * IMAGE_Z_GAP_CENTER;
-      setActiveUpdating(true);
     }
 
     activeImageRef.current = newActiveImage;
     scrollPosRef.current.current = newCurrentPos;
-
-    if (newCurrentPos === target) {
-      setIsScrolling(false);
-    } else {
-      animationRef.current = window.requestAnimationFrame(update);
-    }
-  }, [scrollPosRef, setIsScrolling]);
+  }, [scrollPosRef]);
 
   const updateCenterImages = useCallback(() => {
     const { currentZ, targetZ } = centerImagePosRef.current;
@@ -145,45 +135,20 @@ const ListView = ({ scrollPosRef, isScrolling, setIsScrolling }) => {
 
     centerImagePosRef.current.currentY = newCurrentPosY;
     centerImagePosRef.current.currentZ = newCurrentPosZ;
-
-    // if (newCurrentPosZ !== targetZ) {
-    centerAnimationRef.current =
-      window.requestAnimationFrame(updateCenterImages);
   }, [scrollPosRef]);
 
-  useEffect(() => {
+  useFrame(() => {
     if (!mounted.current) return;
-    if (!isScrolling) {
-      if (animationRef.current) {
-        window.cancelAnimationFrame(animationRef.current);
-        animationRef.current = null;
-      }
-    } else {
-      if (!animationRef.current)
-        animationRef.current = window.requestAnimationFrame(update);
+    const { current, target } = scrollPosRef.current;
+    if (current !== target) {
+      update();
     }
-    return () => {
-      animationRef.current && window.cancelAnimationFrame(animationRef.current);
-    };
-  }, [isScrolling, mounted, update]);
 
-  useEffect(() => {
-    if (!mounted.current) return;
-    if (!activeUpdating) {
-      if (centerAnimationRef.current) {
-        window.cancelAnimationFrame(centerAnimationRef.current);
-        centerAnimationRef.current = null;
-      }
-    } else {
-      if (!centerAnimationRef.current)
-        centerAnimationRef.current =
-          window.requestAnimationFrame(updateCenterImages);
+    const { currentZ, targetZ } = centerImagePosRef.current;
+    if (currentZ !== targetZ) {
+      updateCenterImages();
     }
-    return () => {
-      centerAnimationRef.current &&
-        window.cancelAnimationFrame(centerAnimationRef.current);
-    };
-  }, [activeUpdating, mounted, updateCenterImages]);
+  });
 
   const imgListGroupPadding = 0.35;
   return (

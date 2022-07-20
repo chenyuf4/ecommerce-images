@@ -1,6 +1,5 @@
 import styles from "./Home.module.scss";
 import Icon from "components/Icon/Icon";
-import clsx from "clsx";
 const Home = () => {
   return (
     <div className={styles["home-container"]}>

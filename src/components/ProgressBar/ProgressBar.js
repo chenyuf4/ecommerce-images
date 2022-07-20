@@ -1,15 +1,14 @@
-import { useThree } from "@react-three/fiber";
-import { useCallback, useRef, useEffect } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
+import { useCallback, useRef } from "react";
 import useRefMounted from "util/useRefMounted";
 import "./ProgressBarShaderMaterial";
 import { imagesArr, IMAGE_GAP_SMALL, IMAGE_WIDTH_SMALL } from "util/utilFormat";
 const PROGRESS_BAR_HEIGHT = 0.03;
-const ProgressBar = ({ scrollPosRef, isScrolling }) => {
+const ProgressBar = ({ scrollPosRef }) => {
   const { viewport } = useThree();
   const { width, height } = viewport;
   const progressBarRef = useRef();
   const numImages = imagesArr.length;
-  const animationRef = useRef(null);
   const mounted = useRefMounted();
   const updateProgressBar = useCallback(() => {
     const progressBarMaterial = progressBarRef.current.material;
@@ -18,24 +17,14 @@ const ProgressBar = ({ scrollPosRef, isScrolling }) => {
     const currentProgressBarRightValue = width * percentage - width / 2;
     progressBarMaterial.uniforms.left.value = -width / 2;
     progressBarMaterial.uniforms.right.value = currentProgressBarRightValue;
-    if (isScrolling)
-      animationRef.current = window.requestAnimationFrame(updateProgressBar);
-  }, [isScrolling, numImages, scrollPosRef, width]);
-  useEffect(() => {
+  }, [numImages, scrollPosRef, width]);
+  useFrame(() => {
     if (!mounted.current) return;
-    if (!isScrolling) {
-      if (animationRef.current) {
-        window.cancelAnimationFrame(animationRef.current);
-        animationRef.current = null;
-      }
-    } else {
-      if (!animationRef.current)
-        animationRef.current = window.requestAnimationFrame(updateProgressBar);
+    const { current, target } = scrollPosRef.current;
+    if (current !== target) {
+      updateProgressBar();
     }
-    return () => {
-      animationRef.current && window.cancelAnimationFrame(animationRef.current);
-    };
-  }, [isScrolling, mounted, updateProgressBar]);
+  });
   return (
     <mesh
       ref={progressBarRef}
