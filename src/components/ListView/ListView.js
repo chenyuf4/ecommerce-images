@@ -15,7 +15,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import "./ImageShaderMaterial";
 import { useCallback, useRef } from "react";
 import * as THREE from "three";
-const CENTER_IMAGE_LERP_SLOW = 0.07;
+const CENTER_IMAGE_LERP_SLOW = 0.075;
 const CENTER_IMAGE_LERP_FAST = 0.12;
 
 const planeGeo = new THREE.PlaneBufferGeometry(1, 1);
