@@ -11,3 +11,12 @@
   height: 3rem;
   width: 3rem;
 }
+
+.mode-logo-container > svg {
+  height: 0.85rem;
+  width: 0.85rem;
+}
+
+.mode-inactive > svg {
+  fill: #c9c8c6;
+}
