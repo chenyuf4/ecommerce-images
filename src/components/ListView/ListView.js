@@ -15,8 +15,8 @@ import { useFrame, useThree } from "@react-three/fiber";
 import "./ImageShaderMaterial";
 import { useCallback, useRef } from "react";
 import * as THREE from "three";
-const CENTER_IMAGE_LERP_SLOW = 0.1;
-const CENTER_IMAGE_LERP_FAST = 0.18;
+const CENTER_IMAGE_LERP_SLOW = 0.08;
+const CENTER_IMAGE_LERP_FAST = 0.12;
 
 const planeGeo = new THREE.PlaneBufferGeometry(1, 1);
 const SmallImageBlock = ({ url, index }) => {
@@ -65,18 +65,14 @@ const CenterImageBlock = ({ url, index }) => {
   );
 };
 
-const ListView = ({ scrollPosRef }) => {
-  console.log("rerender");
+const ListView = ({ scrollPosRef, centerImagePosRef }) => {
   const { viewport, invalidate } = useThree();
   const { width, height } = viewport;
   const listViewGroupRef = useRef();
   const mainViewGroupRef = useRef();
   const mounted = useRefMounted();
   const activeImageRef = useRef(0);
-  const centerImagePosRef = useRef({
-    targetZ: 0,
-    currentZ: 0,
-  });
+
   const update = useCallback(() => {
     const { current, target } = scrollPosRef.current;
     const lerpValue = scrollPosRef.current.scrollSpeed >= 45 ? 0.08 : 0.12;
@@ -107,13 +103,11 @@ const ListView = ({ scrollPosRef }) => {
       imagesGroup.forEach((imageMesh) => {
         imageMesh.material.uniforms.activeImage.value = newActiveImage;
       });
-      centerImagePosRef.current.targetZ = newActiveImage * IMAGE_Z_GAP_CENTER;
     }
 
     activeImageRef.current = newActiveImage;
     scrollPosRef.current.current = newCurrentPos;
     if (newCurrentPos !== scrollPosRef.current.target) invalidate();
-    console.log(newCurrentPos, scrollPosRef.current.target);
   }, [invalidate, scrollPosRef]);
 
   const updateCenterImages = useCallback(() => {
@@ -132,7 +126,6 @@ const ListView = ({ scrollPosRef }) => {
     }
     const centerImagesGroup = mainViewGroupRef.current.children;
     centerImagesGroup.forEach((imageMesh, index) => {
-      // position={[0, index * IMAGE_Y_GAP_CENTER, -index * IMAGE_Z_GAP_CENTER]}
       const defaultPosY = index * IMAGE_Y_GAP_CENTER;
       const defaultPosZ = -index * IMAGE_Z_GAP_CENTER;
       imageMesh.position.y = defaultPosY - newCurrentPosY;
@@ -142,7 +135,7 @@ const ListView = ({ scrollPosRef }) => {
     centerImagePosRef.current.currentY = newCurrentPosY;
     centerImagePosRef.current.currentZ = newCurrentPosZ;
     if (newCurrentPosZ !== centerImagePosRef.current.targetZ) invalidate();
-  }, [invalidate, scrollPosRef]);
+  }, [centerImagePosRef, invalidate, scrollPosRef]);
 
   useFrame(() => {
     console.log("asd");
