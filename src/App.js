@@ -8,6 +8,7 @@ import { useRef, useCallback, useEffect } from "react";
 import { imagesArr, IMAGE_GAP_SMALL, IMAGE_WIDTH_SMALL } from "util/utilFormat";
 import ProgressBar from "components/ProgressBar/ProgressBar";
 import Home from "components/Home/Home";
+import { invalidate } from "@react-three/fiber";
 function App() {
   const scrollPosRef = useRef({
     current: 0,
@@ -35,6 +36,7 @@ function App() {
         (direction === "L" ? -scrollSpeed : scrollSpeed);
       target = Math.max(-scrollLimit, Math.min(0, target));
       scrollPosRef.current.target = target;
+      invalidate();
     },
     [scrollLimit]
   );
@@ -50,6 +52,7 @@ function App() {
     <>
       <Home />
       <Canvas
+        frameloop="demand"
         dpr={Math.max(window.devicePixelRatio, 2)}
         linear={true}
         flat={true}

@@ -14,16 +14,19 @@ import useRefMounted from "util/useRefMounted";
 import { useFrame, useThree } from "@react-three/fiber";
 import "./ImageShaderMaterial";
 import { useCallback, useRef } from "react";
-const CENTER_IMAGE_LERP_SLOW = 0.18;
-const CENTER_IMAGE_LERP_FAST = 0.3;
+import * as THREE from "three";
+const CENTER_IMAGE_LERP_SLOW = 0.1;
+const CENTER_IMAGE_LERP_FAST = 0.18;
+
+const planeGeo = new THREE.PlaneBufferGeometry(1, 1);
 const SmallImageBlock = ({ url, index }) => {
   const [imgTexture] = useTexture([url]);
   return (
     <mesh
       position={[index * (IMAGE_WIDTH_SMALL + IMAGE_GAP_SMALL), 0, 0]}
       scale={[IMAGE_WIDTH_SMALL, IMAGE_HEIGHT_SMALL, 1]}
+      geometry={planeGeo}
     >
-      <planeBufferGeometry args={[1, 1, 64, 64]} />
       <imageShaderMaterial
         planeDimension={[
           1,
@@ -44,8 +47,8 @@ const CenterImageBlock = ({ url, index }) => {
     <mesh
       position={[0, index * IMAGE_Y_GAP_CENTER, -index * IMAGE_Z_GAP_CENTER]}
       scale={[IMAGE_WIDTH_CENTER, IMAGE_HEIGHT_CENTER, 1]}
+      geometry={planeGeo}
     >
-      <planeBufferGeometry args={[1, 1, 64, 64]} />
       <imageShaderMaterial
         gap={IMAGE_Z_GAP_CENTER}
         planeDimension={[
@@ -63,7 +66,8 @@ const CenterImageBlock = ({ url, index }) => {
 };
 
 const ListView = ({ scrollPosRef }) => {
-  const { viewport } = useThree();
+  console.log("rerender");
+  const { viewport, invalidate } = useThree();
   const { width, height } = viewport;
   const listViewGroupRef = useRef();
   const mainViewGroupRef = useRef();
@@ -75,9 +79,9 @@ const ListView = ({ scrollPosRef }) => {
   });
   const update = useCallback(() => {
     const { current, target } = scrollPosRef.current;
-    const lerpValue = scrollPosRef.current.scrollSpeed >= 45 ? 0.1 : 0.2;
+    const lerpValue = scrollPosRef.current.scrollSpeed >= 45 ? 0.08 : 0.12;
     let newCurrentPos = current + (target - current) * lerpValue;
-    if (Math.abs(newCurrentPos - target) <= 0.01) {
+    if (Math.abs(newCurrentPos - target) <= 0.02) {
       newCurrentPos = target;
     }
     // update images view at the bottom
@@ -108,7 +112,9 @@ const ListView = ({ scrollPosRef }) => {
 
     activeImageRef.current = newActiveImage;
     scrollPosRef.current.current = newCurrentPos;
-  }, [scrollPosRef]);
+    if (newCurrentPos !== scrollPosRef.current.target) invalidate();
+    console.log(newCurrentPos, scrollPosRef.current.target);
+  }, [invalidate, scrollPosRef]);
 
   const updateCenterImages = useCallback(() => {
     const { currentZ, targetZ } = centerImagePosRef.current;
@@ -120,7 +126,7 @@ const ListView = ({ scrollPosRef }) => {
     let newCurrentPosY =
       (currentZ + (targetZ - currentZ) * lerpValue) *
       (IMAGE_Y_GAP_CENTER / IMAGE_Z_GAP_CENTER);
-    if (Math.abs(newCurrentPosZ - targetZ) <= 0.01) {
+    if (Math.abs(newCurrentPosZ - targetZ) <= 0.02) {
       newCurrentPosZ = targetZ;
       newCurrentPosY = (targetZ * 4) / 7;
     }
@@ -135,19 +141,17 @@ const ListView = ({ scrollPosRef }) => {
 
     centerImagePosRef.current.currentY = newCurrentPosY;
     centerImagePosRef.current.currentZ = newCurrentPosZ;
-  }, [scrollPosRef]);
+    if (newCurrentPosZ !== centerImagePosRef.current.targetZ) invalidate();
+  }, [invalidate, scrollPosRef]);
 
   useFrame(() => {
+    console.log("asd");
     if (!mounted.current) return;
     const { current, target } = scrollPosRef.current;
-    if (current !== target) {
-      update();
-    }
+    if (current !== target) update();
 
     const { currentZ, targetZ } = centerImagePosRef.current;
-    if (currentZ !== targetZ) {
-      updateCenterImages();
-    }
+    if (currentZ !== targetZ) updateCenterImages();
   });
 
   const imgListGroupPadding = 0.35;
