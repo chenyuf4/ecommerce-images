@@ -15,6 +15,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import "./ImageShaderMaterial";
 import { useCallback, useRef } from "react";
 import * as THREE from "three";
+import useStore from "store/useStore";
 const CENTER_IMAGE_LERP_SLOW = 0.075;
 const CENTER_IMAGE_LERP_FAST = 0.12;
 
@@ -69,9 +70,13 @@ const ListView = ({ scrollPosRef, centerImagePosRef }) => {
   const { viewport, invalidate } = useThree();
   const { width, height } = viewport;
   const listViewGroupRef = useRef();
-  const mainViewGroupRef = useRef();
+  console.log("render");
   const mounted = useRefMounted();
   const activeImageRef = useRef(0);
+  const mainViewGroupRef = useStore((state) => state.mainViewGroupRef);
+  const setActiveListViewImage = useStore(
+    (state) => state.setActiveListViewImage
+  );
 
   const update = useCallback(() => {
     const { current, target } = scrollPosRef.current;
@@ -106,9 +111,10 @@ const ListView = ({ scrollPosRef, centerImagePosRef }) => {
     }
 
     activeImageRef.current = newActiveImage;
+    setActiveListViewImage(newActiveImage);
     scrollPosRef.current.current = newCurrentPos;
     if (newCurrentPos !== scrollPosRef.current.target) invalidate();
-  }, [invalidate, scrollPosRef]);
+  }, [invalidate, mainViewGroupRef, scrollPosRef, setActiveListViewImage]);
 
   const updateCenterImages = useCallback(() => {
     const { currentZ, targetZ } = centerImagePosRef.current;
@@ -135,10 +141,9 @@ const ListView = ({ scrollPosRef, centerImagePosRef }) => {
     centerImagePosRef.current.currentY = newCurrentPosY;
     centerImagePosRef.current.currentZ = newCurrentPosZ;
     if (newCurrentPosZ !== centerImagePosRef.current.targetZ) invalidate();
-  }, [centerImagePosRef, invalidate, scrollPosRef]);
+  }, [centerImagePosRef, invalidate, mainViewGroupRef, scrollPosRef]);
 
   useFrame(() => {
-    console.log("asd");
     if (!mounted.current) return;
     const { current, target } = scrollPosRef.current;
     if (current !== target) update();
@@ -150,7 +155,11 @@ const ListView = ({ scrollPosRef, centerImagePosRef }) => {
   const imgListGroupPadding = 0.35;
   return (
     <>
-      <group ref={mainViewGroupRef}>
+      <group
+        ref={(node) => {
+          mainViewGroupRef.current = node;
+        }}
+      >
         {imagesArr.map((url, index) => (
           <CenterImageBlock url={url} index={index} key={`center-${url}`} />
         ))}

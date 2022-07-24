@@ -14,6 +14,7 @@ import {
 import ProgressBar from "components/ProgressBar/ProgressBar";
 import Home from "components/Home/Home";
 import { invalidate } from "@react-three/fiber";
+import useStore from "store/useStore";
 function App() {
   const scrollPosRef = useRef({
     current: 0,
