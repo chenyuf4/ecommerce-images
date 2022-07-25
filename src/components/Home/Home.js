@@ -13,7 +13,7 @@ import {
 } from "util/utilFormat";
 import { invalidate } from "@react-three/fiber";
 import { Power2 } from "gsap";
-const Home = () => {
+const Home = ({ scrollPosRef }) => {
   const mode = useStore((state) => state.mode);
   const setMode = useStore((state) => state.setMode);
   const numImages = imagesArr.length;
@@ -40,7 +40,10 @@ const Home = () => {
               "d-flex justify-content-center align-items-center cursor-pointer"
             )}
             onClick={() => {
-              if (mode !== "list") {
+              if (
+                mode !== "list" &&
+                scrollPosRef.current.current === scrollPosRef.current.target
+              ) {
                 setMode("list");
                 const animatedImages = mainViewGroupRef.current.children.slice(
                   activeListViewImage,
@@ -109,7 +112,10 @@ const Home = () => {
               "ms-3 d-flex justify-content-center align-items-center cursor-pointer"
             )}
             onClick={() => {
-              if (mode !== "grid") {
+              if (
+                mode !== "grid" &&
+                scrollPosRef.current.current === scrollPosRef.current.target
+              ) {
                 setMode("grid");
                 const animatedImages = mainViewGroupRef.current.children.slice(
                   activeListViewImage,

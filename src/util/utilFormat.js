@@ -188,3 +188,5 @@ export const IMAGE_GRID_WIDTH = IMAGE_WIDTH_SMALL * 3.7;
 export const IMAGE_GRID_HEIGHT = IMAGE_HEIGHT_SMALL * 3.7;
 export const IMAGE_GRID_GAP_X = IMAGE_GAP_SMALL * 1.8;
 export const IMAGE_GRID_GAP_Y = IMAGE_GRID_GAP_X;
+
+export const imgListGroupPadding = 0.35;

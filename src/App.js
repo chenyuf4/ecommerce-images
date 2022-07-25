@@ -10,6 +10,7 @@ import {
   IMAGE_GAP_SMALL,
   IMAGE_WIDTH_SMALL,
   IMAGE_Z_GAP_CENTER,
+  imgListGroupPadding,
 } from "util/utilFormat";
 import ProgressBar from "components/ProgressBar/ProgressBar";
 import Home from "components/Home/Home";
@@ -27,12 +28,16 @@ function App() {
   });
   const numImages = imagesArr.length;
   const scrollLimit = (numImages - 1) * (IMAGE_WIDTH_SMALL + IMAGE_GAP_SMALL);
+  const canvasSize = useStore((state) => state.canvasSize);
+  const { width } = canvasSize;
   const onWheelHandler = useCallback(
     (e) => {
       const { pixelY } = normalizeWheel(e);
       const relativeSpeed = Math.min(Math.abs(pixelY), 100);
       const scrollSpeed = relativeSpeed * (relativeSpeed < 40 ? 0.005 : 0.015);
       scrollPosRef.current.scrollSpeed = relativeSpeed;
+      const defaultPosX =
+        -width / 2 + IMAGE_WIDTH_SMALL / 2 + imgListGroupPadding;
       let direction = "L";
       if (pixelY < 0) {
         direction = "R";
@@ -49,11 +54,12 @@ function App() {
 
       let finalActiveImage = -1;
       Array.from({ length: imagesArr.length }).forEach((_, index) => {
-        const defaultPos = index * (IMAGE_WIDTH_SMALL + IMAGE_GAP_SMALL);
+        const defaultPos =
+          defaultPosX + index * (IMAGE_WIDTH_SMALL + IMAGE_GAP_SMALL);
         const finalTargetPos = defaultPos + target;
         if (
           finalActiveImage === -1 &&
-          finalTargetPos >= -IMAGE_WIDTH_SMALL / 2
+          finalTargetPos >= defaultPosX - IMAGE_WIDTH_SMALL / 2
         ) {
           finalActiveImage = index;
         }
@@ -62,7 +68,7 @@ function App() {
       centerImagePosRef.current.targetZ = finalActiveImage * IMAGE_Z_GAP_CENTER;
       invalidate();
     },
-    [scrollLimit]
+    [scrollLimit, width]
   );
 
   useEffect(() => {
@@ -74,7 +80,7 @@ function App() {
   const setCanvasSize = useStore((state) => state.setCanvasSize);
   return (
     <>
-      <Home />
+      <Home scrollPosRef={scrollPosRef} />
       <Canvas
         frameloop="demand"
         dpr={Math.max(window.devicePixelRatio, 2)}
