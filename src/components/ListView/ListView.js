@@ -82,7 +82,7 @@ const ListView = ({ scrollPosRef, centerImagePosRef }) => {
     const { current, target } = scrollPosRef.current;
     const lerpValue = scrollPosRef.current.scrollSpeed >= 45 ? 0.08 : 0.12;
     let newCurrentPos = current + (target - current) * lerpValue;
-    if (Math.abs(newCurrentPos - target) <= 0.02) {
+    if (Math.abs(newCurrentPos - target) <= 0.01) {
       newCurrentPos = target;
     }
     // update images view at the bottom
@@ -126,7 +126,7 @@ const ListView = ({ scrollPosRef, centerImagePosRef }) => {
     let newCurrentPosY =
       (currentZ + (targetZ - currentZ) * lerpValue) *
       (IMAGE_Y_GAP_CENTER / IMAGE_Z_GAP_CENTER);
-    if (Math.abs(newCurrentPosZ - targetZ) <= 0.02) {
+    if (Math.abs(newCurrentPosZ - targetZ) <= 0.01) {
       newCurrentPosZ = targetZ;
       newCurrentPosY = (targetZ * 4) / 7;
     }
