@@ -31,7 +31,7 @@ function App() {
     (e) => {
       const { pixelY } = normalizeWheel(e);
       const relativeSpeed = Math.min(Math.abs(pixelY), 100);
-      const scrollSpeed = relativeSpeed * (relativeSpeed < 40 ? 0.005 : 0.018);
+      const scrollSpeed = relativeSpeed * (relativeSpeed < 40 ? 0.005 : 0.015);
       scrollPosRef.current.scrollSpeed = relativeSpeed;
       let direction = "L";
       if (pixelY < 0) {
@@ -72,6 +72,7 @@ function App() {
     };
   }, [onWheelHandler]);
 
+  const setCanvasSize = useStore((state) => state.setCanvasSize);
   return (
     <>
       <Home />
@@ -81,6 +82,11 @@ function App() {
         linear={true}
         flat={true}
         gl={{ antialias: true, alpha: true }}
+        onCreated={(state) => {
+          const { viewport } = state;
+          const { width, height } = viewport;
+          setCanvasSize(width, height);
+        }}
       >
         <Suspense fallback={null}>
           <PerspectiveCamera

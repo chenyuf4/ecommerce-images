@@ -11,11 +11,14 @@ import {
   IMAGE_DIMENSION,
 } from "util/utilFormat";
 import useRefMounted from "util/useRefMounted";
+import { easings } from "@react-spring/three";
 import { useFrame, useThree } from "@react-three/fiber";
 import "./ImageShaderMaterial";
 import { useCallback, useRef } from "react";
 import * as THREE from "three";
 import useStore from "store/useStore";
+import { useSpring, a } from "@react-spring/three";
+
 const CENTER_IMAGE_LERP_SLOW = 0.075;
 const CENTER_IMAGE_LERP_FAST = 0.12;
 
@@ -23,7 +26,7 @@ const planeGeo = new THREE.PlaneBufferGeometry(1, 1);
 const SmallImageBlock = ({ url, index }) => {
   const [imgTexture] = useTexture([url]);
   return (
-    <mesh
+    <a.mesh
       position={[index * (IMAGE_WIDTH_SMALL + IMAGE_GAP_SMALL), 0, 0]}
       scale={[IMAGE_WIDTH_SMALL, IMAGE_HEIGHT_SMALL, 1]}
       geometry={planeGeo}
@@ -38,16 +41,69 @@ const SmallImageBlock = ({ url, index }) => {
         tex={imgTexture}
         index={index}
       />
-    </mesh>
+    </a.mesh>
   );
 };
 
 const CenterImageBlock = ({ url, index }) => {
   const [imgTexture] = useTexture([url]);
+  const mode = useStore((state) => state.mode);
+  const meshRef = useRef();
+  const { viewport, invalidate } = useThree();
+  const activeListViewImage = useStore((state) => state.activeListViewImage);
+  const { width } = viewport;
+  const { posX } = useSpring({
+    posX:
+      mode === "grid" &&
+      index >= activeListViewImage &&
+      index < Math.min(activeListViewImage + 4, imagesArr.length)
+        ? width / 2 + IMAGE_WIDTH_CENTER / 2 + (index - activeListViewImage)
+        : 0,
+    onChange: () => invalidate(),
+    onStart: () => invalidate(),
+    onProps: () => invalidate(),
+    delay: (index - activeListViewImage) * 35,
+    config: {
+      precision: 0.001,
+      duration: 900,
+      easing: easings.easeOutQuart,
+    },
+  });
+
+  const { scaleX } = useSpring({
+    scaleX:
+      mode === "grid" &&
+      index >= activeListViewImage &&
+      index < Math.min(activeListViewImage + 4, imagesArr.length)
+        ? IMAGE_WIDTH_CENTER * 0.6
+        : IMAGE_WIDTH_CENTER,
+    onChange: (e) => {
+      const value = e.value.scaleX;
+      meshRef.current.material.uniforms.planeDimension.value = [
+        value / IMAGE_WIDTH_CENTER,
+        (IMAGE_HEIGHT_CENTER / IMAGE_WIDTH_CENTER) *
+          (IMAGE_DIMENSION.width / IMAGE_DIMENSION.height),
+      ];
+      invalidate();
+    },
+    onStart: () => invalidate(),
+    onProps: () => invalidate(),
+    delay: (index - activeListViewImage) * 35,
+    config: {
+      precision: 0.001,
+      duration: 1000,
+      easing: easings.easeOutSine,
+    },
+  });
   return (
-    <mesh
-      position={[0, index * IMAGE_Y_GAP_CENTER, -index * IMAGE_Z_GAP_CENTER]}
-      scale={[IMAGE_WIDTH_CENTER, IMAGE_HEIGHT_CENTER, 1]}
+    <a.mesh
+      ref={meshRef}
+      position-x={posX}
+      position-y={index * IMAGE_Y_GAP_CENTER}
+      position-z={-index * IMAGE_Z_GAP_CENTER}
+      scale-x={scaleX}
+      scale-y={IMAGE_HEIGHT_CENTER}
+      scale-z={1}
       geometry={planeGeo}
     >
       <imageShaderMaterial
@@ -62,7 +118,7 @@ const CenterImageBlock = ({ url, index }) => {
         index={index}
         mode={1.0}
       />
-    </mesh>
+    </a.mesh>
   );
 };
 
@@ -153,6 +209,8 @@ const ListView = ({ scrollPosRef, centerImagePosRef }) => {
   });
 
   const imgListGroupPadding = 0.35;
+
+  // improve: use shared image texture instead of create one every time
   return (
     <>
       <group
