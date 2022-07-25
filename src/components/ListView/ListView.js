@@ -9,6 +9,10 @@ import {
   IMAGE_HEIGHT_CENTER,
   IMAGE_WIDTH_CENTER,
   IMAGE_DIMENSION,
+  IMAGE_GRID_HEIGHT,
+  IMAGE_GRID_WIDTH,
+  IMAGE_GRID_GAP_X,
+  IMAGE_GRID_GAP_Y,
 } from "util/utilFormat";
 import useRefMounted from "util/useRefMounted";
 import { easings } from "@react-spring/three";
@@ -21,14 +25,93 @@ import { useSpring, a } from "@react-spring/three";
 
 const CENTER_IMAGE_LERP_SLOW = 0.075;
 const CENTER_IMAGE_LERP_FAST = 0.12;
+const imgListGroupPadding = 0.35;
 
 const planeGeo = new THREE.PlaneBufferGeometry(1, 1);
 const SmallImageBlock = ({ url, index }) => {
   const [imgTexture] = useTexture([url]);
+  const mode = useStore((state) => state.mode);
+  const meshRef = useRef();
+  const { viewport, invalidate } = useThree();
+  const activeListViewImage = useStore((state) => state.activeListViewImage);
+  const { width, height } = viewport;
+
+  const getGridPosByIndex = () => {
+    const row = Math.floor(index / 3);
+    const col = index % 3;
+    // default top left corner position
+    const leftTopX = width / 2 - 2.5 * IMAGE_GRID_WIDTH - 3 * IMAGE_GRID_GAP_X;
+    const leftTopY = IMAGE_GRID_GAP_Y + IMAGE_GRID_HEIGHT;
+    const currentX = leftTopX + col * (IMAGE_GRID_GAP_X + IMAGE_GRID_WIDTH);
+    const activeImageRow = Math.floor(activeListViewImage / 3);
+    const currentY =
+      leftTopY +
+      (activeImageRow - row) * (IMAGE_GRID_GAP_Y + IMAGE_GRID_HEIGHT);
+    return { x: currentX, y: currentY };
+  };
+
+  const { posX, posY } = useSpring({
+    posX:
+      mode === "grid"
+        ? getGridPosByIndex().x
+        : -width / 2 +
+          IMAGE_WIDTH_SMALL / 2 +
+          imgListGroupPadding +
+          (index - activeListViewImage) * (IMAGE_WIDTH_SMALL + IMAGE_GAP_SMALL),
+    posY:
+      mode === "grid"
+        ? getGridPosByIndex().y
+        : -height / 2 + IMAGE_HEIGHT_SMALL / 2 + imgListGroupPadding,
+    onChange: () => invalidate(),
+    onStart: () => invalidate(),
+    onProps: () => invalidate(),
+    delay: mode === "grid" ? 120 : 0,
+    config: {
+      precision: 0.001,
+      duration: 750,
+      easing: easings.easeOutQuart,
+    },
+  });
+
+  const { scaleX, scaleY } = useSpring({
+    scaleX: mode === "grid" ? IMAGE_GRID_WIDTH : IMAGE_WIDTH_SMALL,
+    scaleY: mode === "grid" ? IMAGE_GRID_HEIGHT : IMAGE_HEIGHT_SMALL,
+    onChange: (e) => {
+      const valueX = e.value.scaleX;
+      const valueY = e.value.scaleY;
+      meshRef.current.material.uniforms.planeDimension.value = [
+        1,
+        (valueY / valueX) * (IMAGE_DIMENSION.width / IMAGE_DIMENSION.height),
+      ];
+      invalidate();
+    },
+    onStart: () => invalidate(),
+    onProps: () => invalidate(),
+    delay: mode === "grid" ? 120 : 0,
+    config: {
+      precision: 0.001,
+      duration: 750,
+      easing: easings.easeOutQuart,
+    },
+  });
   return (
     <a.mesh
-      position={[index * (IMAGE_WIDTH_SMALL + IMAGE_GAP_SMALL), 0, 0]}
-      scale={[IMAGE_WIDTH_SMALL, IMAGE_HEIGHT_SMALL, 1]}
+      ref={meshRef}
+      position-x={posX}
+      position-y={posY}
+      position-z={0}
+      // position={[
+      //   -width / 2 +
+      //     IMAGE_WIDTH_SMALL / 2 +
+      //     imgListGroupPadding +
+      //     index * (IMAGE_WIDTH_SMALL + IMAGE_GAP_SMALL),
+      //   -height / 2 + IMAGE_HEIGHT_SMALL / 2 + imgListGroupPadding,
+      //   0,
+      // ]}
+      scale-x={scaleX}
+      scale-y={scaleY}
+      scale-z={1}
+      // scale={[IMAGE_WIDTH_SMALL, IMAGE_HEIGHT_SMALL, 1]}
       geometry={planeGeo}
     >
       <imageShaderMaterial
@@ -57,12 +140,17 @@ const CenterImageBlock = ({ url, index }) => {
       mode === "grid" &&
       index >= activeListViewImage &&
       index < Math.min(activeListViewImage + 4, imagesArr.length)
-        ? width / 2 + IMAGE_WIDTH_CENTER / 2 + (index - activeListViewImage)
+        ? width / 2 +
+          (IMAGE_WIDTH_CENTER * 0.7) / 2 +
+          (index - activeListViewImage)
         : 0,
     onChange: () => invalidate(),
     onStart: () => invalidate(),
     onProps: () => invalidate(),
-    delay: (index - activeListViewImage) * 35,
+    delay:
+      mode === "grid"
+        ? (index - activeListViewImage) * 40
+        : (index - activeListViewImage + 5) * 40,
     config: {
       precision: 0.001,
       duration: 900,
@@ -88,7 +176,10 @@ const CenterImageBlock = ({ url, index }) => {
     },
     onStart: () => invalidate(),
     onProps: () => invalidate(),
-    delay: (index - activeListViewImage) * 35,
+    delay:
+      mode === "grid"
+        ? (index - activeListViewImage) * 35
+        : (index - activeListViewImage + 5) * 35,
     config: {
       precision: 0.001,
       duration: 1000,
@@ -145,9 +236,13 @@ const ListView = ({ scrollPosRef, centerImagePosRef }) => {
     const imagesGroup = listViewGroupRef.current.children;
     let newActiveImage = -1;
     imagesGroup.forEach((imageMesh, index) => {
-      const defaultPos = index * (IMAGE_WIDTH_SMALL + IMAGE_GAP_SMALL);
+      const defaultPos =
+        -width / 2 +
+        IMAGE_WIDTH_SMALL / 2 +
+        imgListGroupPadding +
+        index * (IMAGE_WIDTH_SMALL + IMAGE_GAP_SMALL);
       const newPos = defaultPos + newCurrentPos;
-      if (newActiveImage === -1 && newPos >= -IMAGE_WIDTH_SMALL / 2) {
+      if (newActiveImage === -1 && newPos >= -width / 2 + imgListGroupPadding) {
         newActiveImage = index;
       }
       imageMesh.position.x = newPos;
@@ -170,7 +265,13 @@ const ListView = ({ scrollPosRef, centerImagePosRef }) => {
     setActiveListViewImage(newActiveImage);
     scrollPosRef.current.current = newCurrentPos;
     if (newCurrentPos !== scrollPosRef.current.target) invalidate();
-  }, [invalidate, mainViewGroupRef, scrollPosRef, setActiveListViewImage]);
+  }, [
+    invalidate,
+    mainViewGroupRef,
+    scrollPosRef,
+    setActiveListViewImage,
+    width,
+  ]);
 
   const updateCenterImages = useCallback(() => {
     const { currentZ, targetZ } = centerImagePosRef.current;
@@ -208,8 +309,6 @@ const ListView = ({ scrollPosRef, centerImagePosRef }) => {
     if (currentZ !== targetZ) updateCenterImages();
   });
 
-  const imgListGroupPadding = 0.35;
-
   // improve: use shared image texture instead of create one every time
   return (
     <>
@@ -224,11 +323,11 @@ const ListView = ({ scrollPosRef, centerImagePosRef }) => {
       </group>
       <group
         ref={listViewGroupRef}
-        position={[
-          -width / 2 + IMAGE_WIDTH_SMALL / 2 + imgListGroupPadding,
-          -height / 2 + IMAGE_HEIGHT_SMALL / 2 + imgListGroupPadding,
-          0,
-        ]}
+        // position={[
+        //   -width / 2 + IMAGE_WIDTH_SMALL / 2 + imgListGroupPadding,
+        //   -height / 2 + IMAGE_HEIGHT_SMALL / 2 + imgListGroupPadding,
+        //   0,
+        // ]}
       >
         {imagesArr.map((url, index) => (
           <SmallImageBlock url={url} index={index} key={`small-${url}`} />

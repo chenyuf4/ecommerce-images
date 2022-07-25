@@ -15,6 +15,7 @@ import ProgressBar from "components/ProgressBar/ProgressBar";
 import Home from "components/Home/Home";
 import { invalidate } from "@react-three/fiber";
 import useStore from "store/useStore";
+const imgListGroupPadding = 0.35;
 function App() {
   const scrollPosRef = useRef({
     current: 0,
@@ -27,6 +28,8 @@ function App() {
   });
   const numImages = imagesArr.length;
   const scrollLimit = (numImages - 1) * (IMAGE_WIDTH_SMALL + IMAGE_GAP_SMALL);
+  const canvasSize = useStore((state) => state.canvasSize);
+  const { width } = canvasSize;
   const onWheelHandler = useCallback(
     (e) => {
       const { pixelY } = normalizeWheel(e);
@@ -49,11 +52,15 @@ function App() {
 
       let finalActiveImage = -1;
       Array.from({ length: imagesArr.length }).forEach((_, index) => {
-        const defaultPos = index * (IMAGE_WIDTH_SMALL + IMAGE_GAP_SMALL);
+        const defaultPos =
+          -width / 2 +
+          IMAGE_WIDTH_SMALL / 2 +
+          imgListGroupPadding +
+          index * (IMAGE_WIDTH_SMALL + IMAGE_GAP_SMALL);
         const finalTargetPos = defaultPos + target;
         if (
           finalActiveImage === -1 &&
-          finalTargetPos >= -IMAGE_WIDTH_SMALL / 2
+          finalTargetPos >= -width / 2 + imgListGroupPadding
         ) {
           finalActiveImage = index;
         }
@@ -62,7 +69,7 @@ function App() {
       centerImagePosRef.current.targetZ = finalActiveImage * IMAGE_Z_GAP_CENTER;
       invalidate();
     },
-    [scrollLimit]
+    [scrollLimit, width]
   );
 
   useEffect(() => {
