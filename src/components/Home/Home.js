@@ -8,9 +8,11 @@ import {
   IMAGE_WIDTH_CENTER,
   IMAGE_HEIGHT_CENTER,
   IMAGE_DIMENSION,
+  IMAGE_HEIGHT_SMALL,
+  IMAGE_WIDTH_SMALL,
 } from "util/utilFormat";
 import { invalidate } from "@react-three/fiber";
-import { Expo, Power2 } from "gsap";
+import { Power2 } from "gsap";
 const Home = () => {
   const mode = useStore((state) => state.mode);
   const setMode = useStore((state) => state.setMode);
@@ -48,6 +50,17 @@ const Home = () => {
                   onUpdate: () => invalidate(),
                   onUpdateParams: () => invalidate(),
                   onStart: () => invalidate(),
+                  onComplete: () => {
+                    mainViewGroupRef.current.children.forEach((item) => {
+                      item.position.x = 0;
+                      item.scale.x = IMAGE_WIDTH_CENTER;
+                      item.material.uniforms.planeDimension.value = [
+                        1,
+                        (IMAGE_HEIGHT_SMALL / IMAGE_WIDTH_SMALL) *
+                          (IMAGE_DIMENSION.width / IMAGE_DIMENSION.height),
+                      ];
+                    });
+                  },
                 });
                 animatedImages.forEach((item, index) => {
                   tl.fromTo(

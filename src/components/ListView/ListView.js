@@ -69,11 +69,11 @@ const CenterImageBlock = ({ url, index }) => {
 const ListView = ({ scrollPosRef, centerImagePosRef }) => {
   const { viewport, invalidate } = useThree();
   const { width, height } = viewport;
-  const listViewGroupRef = useRef();
   console.log("render");
   const mounted = useRefMounted();
   const activeImageRef = useRef(0);
   const mainViewGroupRef = useStore((state) => state.mainViewGroupRef);
+  const listViewGroupRef = useStore((state) => state.listViewGroupRef);
   const setActiveListViewImage = useStore(
     (state) => state.setActiveListViewImage
   );
@@ -114,7 +114,13 @@ const ListView = ({ scrollPosRef, centerImagePosRef }) => {
     setActiveListViewImage(newActiveImage);
     scrollPosRef.current.current = newCurrentPos;
     if (newCurrentPos !== scrollPosRef.current.target) invalidate();
-  }, [invalidate, mainViewGroupRef, scrollPosRef, setActiveListViewImage]);
+  }, [
+    invalidate,
+    listViewGroupRef,
+    mainViewGroupRef,
+    scrollPosRef,
+    setActiveListViewImage,
+  ]);
 
   const updateCenterImages = useCallback(() => {
     const { currentZ, targetZ } = centerImagePosRef.current;
@@ -165,7 +171,9 @@ const ListView = ({ scrollPosRef, centerImagePosRef }) => {
         ))}
       </group>
       <group
-        ref={listViewGroupRef}
+        ref={(node) => {
+          listViewGroupRef.current = node;
+        }}
         position={[
           -width / 2 + IMAGE_WIDTH_SMALL / 2 + imgListGroupPadding,
           -height / 2 + IMAGE_HEIGHT_SMALL / 2 + imgListGroupPadding,
