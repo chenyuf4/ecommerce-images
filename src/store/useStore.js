@@ -32,6 +32,18 @@ const useStore = create((set) => ({
     set({
       activeListViewImage: index,
     }),
+
+  canvasSize: {
+    width: 0,
+    height: 0,
+  },
+  setCanvasSize: (width, height) =>
+    set({
+      canvasSize: {
+        width,
+        height,
+      },
+    }),
 }));
 
 export default useStore;
