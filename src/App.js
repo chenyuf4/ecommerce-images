@@ -10,7 +10,9 @@ import {
   IMAGE_GAP_SMALL,
   IMAGE_GRID_GAP_Y,
   IMAGE_GRID_HEIGHT,
+  IMAGE_WIDTH_CENTER,
   IMAGE_WIDTH_SMALL,
+  IMAGE_Y_GAP_CENTER,
   IMAGE_Z_GAP_CENTER,
   imgListGroupPadding,
 } from "util/utilFormat";
@@ -30,13 +32,17 @@ function App() {
   });
   const numImages = imagesArr.length;
   const numRows = Math.ceil(numImages / 3);
-  const canvasSize = useStore((state) => state.canvasSize);
-  const mode = useStore((state) => state.mode);
-  const { width } = canvasSize;
+  const canvasSizeRef = useRef({
+    width: 0,
+    height: 0,
+  });
+  const modeRef = useRef("list");
+  const activeListViewImageRef = useRef(0);
+  const mainViewGroupRef = useStore((state) => state.mainViewGroupRef);
   const onWheelHandler = useCallback(
     (e) => {
       const scrollLimit =
-        mode === "list"
+        modeRef.current === "list"
           ? (numImages - 1) * (IMAGE_WIDTH_SMALL + IMAGE_GAP_SMALL)
           : (numRows - 1) * (IMAGE_GRID_HEIGHT + IMAGE_GRID_GAP_Y);
       const { pixelY } = normalizeWheel(e);
@@ -44,7 +50,9 @@ function App() {
       const scrollSpeed = relativeSpeed * (relativeSpeed < 40 ? 0.005 : 0.015);
       scrollPosRef.current.scrollSpeed = relativeSpeed;
       const defaultPosX =
-        -width / 2 + IMAGE_WIDTH_SMALL / 2 + imgListGroupPadding;
+        -canvasSizeRef.current.width / 2 +
+        IMAGE_WIDTH_SMALL / 2 +
+        imgListGroupPadding;
       let direction = "L";
       if (pixelY < 0) {
         direction = "R";
@@ -74,7 +82,7 @@ function App() {
         const finalTargetPosGrid = defaultPosGrid - target;
 
         if (
-          mode === "list" &&
+          modeRef.current === "list" &&
           finalActiveImage === -1 &&
           finalTargetPosList >= defaultPosX - IMAGE_WIDTH_SMALL / 2
         ) {
@@ -82,7 +90,7 @@ function App() {
         }
 
         if (
-          mode === "grid" &&
+          modeRef.current === "grid" &&
           finalActiveImage === -1 &&
           index % 3 === 0 &&
           (finalTargetPosGrid <= IMAGE_GRID_HEIGHT + IMAGE_GRID_GAP_Y ||
@@ -92,10 +100,28 @@ function App() {
         }
       });
 
-      centerImagePosRef.current.targetZ = finalActiveImage * IMAGE_Z_GAP_CENTER;
+      if (modeRef.current === "grid") {
+        mainViewGroupRef.current.children.forEach((item, index) => {
+          item.position.x =
+            canvasSizeRef.current.width / 2 +
+            (IMAGE_WIDTH_CENTER * 0.5) / 2 +
+            (index - finalActiveImage);
+          item.position.y = (index - finalActiveImage) * IMAGE_Y_GAP_CENTER;
+          item.position.z = -(index - finalActiveImage) * IMAGE_Z_GAP_CENTER;
+          item.scale.x = IMAGE_WIDTH_CENTER / 2;
+        });
+        centerImagePosRef.current.targetZ =
+          finalActiveImage * IMAGE_Z_GAP_CENTER;
+        centerImagePosRef.current.currentZ =
+          finalActiveImage * IMAGE_Z_GAP_CENTER;
+      } else {
+        centerImagePosRef.current.targetZ =
+          finalActiveImage * IMAGE_Z_GAP_CENTER;
+      }
+
       invalidate();
     },
-    [mode, numImages, numRows, width]
+    [mainViewGroupRef, numImages, numRows]
   );
 
   useEffect(() => {
@@ -104,10 +130,14 @@ function App() {
       window.removeEventListener("wheel", onWheelHandler);
     };
   }, [onWheelHandler]);
-  const setCanvasSize = useStore((state) => state.setCanvasSize);
   return (
     <>
-      <Home scrollPosRef={scrollPosRef} />
+      <Home
+        modeRef={modeRef}
+        canvasSizeRef={canvasSizeRef}
+        scrollPosRef={scrollPosRef}
+        activeListViewImageRef={activeListViewImageRef}
+      />
       <Canvas
         frameloop="demand"
         dpr={Math.max(window.devicePixelRatio, 2)}
@@ -117,7 +147,8 @@ function App() {
         onCreated={(state) => {
           const { viewport } = state;
           const { width, height } = viewport;
-          setCanvasSize(width, height);
+          canvasSizeRef.current.width = width;
+          canvasSizeRef.current.height = height;
         }}
       >
         <Suspense fallback={null}>
@@ -130,10 +161,16 @@ function App() {
           />
           <color attach="background" args={["#ffffff"]} />
           <ListView
+            modeRef={modeRef}
             centerImagePosRef={centerImagePosRef}
             scrollPosRef={scrollPosRef}
+            activeListViewImageRef={activeListViewImageRef}
           />
-          <ProgressBar scrollPosRef={scrollPosRef} />
+          <ProgressBar
+            activeListViewImageRef={activeListViewImageRef}
+            modeRef={modeRef}
+            scrollPosRef={scrollPosRef}
+          />
         </Suspense>
       </Canvas>
     </>

@@ -16,18 +16,21 @@ import {
   IMAGE_GRID_GAP_Y,
   imgListGroupPadding,
   IMAGE_GAP_SMALL,
+  IMAGE_Z_GAP_CENTER,
+  IMAGE_Y_GAP_CENTER,
 } from "util/utilFormat";
 import { invalidate } from "@react-three/fiber";
 import { Power2 } from "gsap";
-const Home = ({ scrollPosRef }) => {
-  const mode = useStore((state) => state.mode);
-  const setMode = useStore((state) => state.setMode);
+const Home = ({
+  canvasSizeRef,
+  scrollPosRef,
+  modeRef,
+  activeListViewImageRef,
+}) => {
   const numImages = imagesArr.length;
   const mainViewGroupRef = useStore((state) => state.mainViewGroupRef);
   const listViewGroupRef = useStore((state) => state.listViewGroupRef);
-  const activeListViewImage = useStore((state) => state.activeListViewImage);
-  const canvasSize = useStore((state) => state.canvasSize);
-  const { width, height } = canvasSize;
+
   return (
     <div className={styles["home-container"]}>
       <div className="p-5 d-flex justify-content-between align-items-center">
@@ -43,49 +46,40 @@ const Home = ({ scrollPosRef }) => {
           <div
             className={clsx(
               styles["mode-logo-container"],
-              mode === "grid" && styles["mode-inactive"],
+              modeRef.current === "grid" && styles["mode-inactive"],
               "d-flex justify-content-center align-items-center cursor-pointer"
             )}
             onClick={() => {
               if (
-                mode !== "list" &&
+                modeRef.current !== "list" &&
                 scrollPosRef.current.current === scrollPosRef.current.target
               ) {
-                setMode("list");
+                modeRef.current = "list";
                 const animatedImages = mainViewGroupRef.current.children.slice(
-                  activeListViewImage,
-                  Math.min(activeListViewImage + 4, numImages)
+                  activeListViewImageRef.current,
+                  Math.min(activeListViewImageRef.current + 4, numImages)
                 );
+
                 const tl = gsap.timeline({
                   onUpdate: () => invalidate(),
                   onUpdateParams: () => invalidate(),
-                  onStart: () => {
-                    invalidate();
-                    mainViewGroupRef.current.children.forEach((item) => {
-                      item.material.uniforms.mode.value = 1.0;
-                    });
-                  },
-                  onComplete: () => {
-                    mainViewGroupRef.current.children.forEach((item) => {
-                      console.log(item.material.uniforms.mode.value);
-                      item.position.x = 0;
-                      item.scale.x = IMAGE_WIDTH_CENTER;
-                      item.material.uniforms.planeDimension.value = [
-                        1,
-                        (IMAGE_HEIGHT_SMALL / IMAGE_WIDTH_SMALL) *
-                          (IMAGE_DIMENSION.width / IMAGE_DIMENSION.height),
-                      ];
-                    });
-                  },
+                  onStart: () => invalidate(),
                 });
                 animatedImages.forEach((item, index) => {
                   tl.fromTo(
                     item.position,
                     {
-                      x: width / 2 + (IMAGE_WIDTH_CENTER * 0.5) / 2 + index,
+                      x:
+                        canvasSizeRef.current.width / 2 +
+                        (IMAGE_WIDTH_CENTER * 0.5) / 2 +
+                        index,
+                      y: index * IMAGE_Y_GAP_CENTER,
+                      z: -index * IMAGE_Z_GAP_CENTER,
                     },
                     {
                       x: 0,
+                      y: index * IMAGE_Y_GAP_CENTER,
+                      z: -index * IMAGE_Z_GAP_CENTER,
                       delay: index * 0.035,
                       duration: 0.65,
                       ease: Power2.easeOut,
@@ -94,7 +88,7 @@ const Home = ({ scrollPosRef }) => {
                   ).fromTo(
                     item.scale,
                     {
-                      x: IMAGE_WIDTH_CENTER * 0.5,
+                      x: IMAGE_WIDTH_CENTER / 2,
                     },
                     {
                       x: IMAGE_WIDTH_CENTER,
@@ -117,16 +111,18 @@ const Home = ({ scrollPosRef }) => {
                 const listViewImages = listViewGroupRef.current.children;
                 listViewImages.forEach((item, index) => {
                   const defaultPosX =
-                    -width / 2 + IMAGE_WIDTH_SMALL / 2 + imgListGroupPadding;
+                    -canvasSizeRef.current.width / 2 +
+                    IMAGE_WIDTH_SMALL / 2 +
+                    imgListGroupPadding;
                   tl.to(
                     item.position,
                     {
                       x:
                         defaultPosX +
-                        (index - activeListViewImage) *
+                        (index - activeListViewImageRef.current) *
                           (IMAGE_WIDTH_SMALL + IMAGE_GAP_SMALL),
                       y:
-                        -height / 2 +
+                        -canvasSizeRef.current.height / 2 +
                         IMAGE_HEIGHT_SMALL / 2 +
                         imgListGroupPadding,
                     },
@@ -151,7 +147,8 @@ const Home = ({ scrollPosRef }) => {
                 });
 
                 scrollPosRef.current.current = scrollPosRef.current.target =
-                  -activeListViewImage * (IMAGE_GAP_SMALL + IMAGE_WIDTH_SMALL);
+                  -activeListViewImageRef.current *
+                  (IMAGE_GAP_SMALL + IMAGE_WIDTH_SMALL);
               }
             }}
           >
@@ -160,34 +157,32 @@ const Home = ({ scrollPosRef }) => {
           <div
             className={clsx(
               styles["mode-logo-container"],
-              mode === "list" && styles["mode-inactive"],
+              modeRef.current === "list" && styles["mode-inactive"],
               "ms-3 d-flex justify-content-center align-items-center cursor-pointer"
             )}
             onClick={() => {
               if (
-                mode !== "grid" &&
+                modeRef.current !== "grid" &&
                 scrollPosRef.current.current === scrollPosRef.current.target
               ) {
-                setMode("grid");
+                modeRef.current = "grid";
                 const animatedImages = mainViewGroupRef.current.children.slice(
-                  activeListViewImage,
-                  Math.min(activeListViewImage + 4, numImages)
+                  activeListViewImageRef.current,
+                  Math.min(activeListViewImageRef.current + 4, numImages)
                 );
                 const tl = gsap.timeline({
                   onUpdate: () => invalidate(),
                   onUpdateParams: () => invalidate(),
                   onStart: () => invalidate(),
-                  onComplete: () => {
-                    mainViewGroupRef.current.children.forEach(
-                      (item) => (item.material.uniforms.mode.value = 2.0)
-                    );
-                  },
                 });
                 animatedImages.forEach((item, index) => {
                   tl.to(
                     item.position,
                     {
-                      x: width / 2 + (IMAGE_WIDTH_CENTER * 0.5) / 2 + index,
+                      x:
+                        canvasSizeRef.current.width / 2 +
+                        (IMAGE_WIDTH_CENTER * 0.5) / 2 +
+                        index,
                       delay: index * 0.035,
                       duration: 0.65,
                       ease: Power2.easeOut,
@@ -214,13 +209,17 @@ const Home = ({ scrollPosRef }) => {
                 });
 
                 const listViewImages = listViewGroupRef.current.children;
-                const activeImageRow = Math.floor(activeListViewImage / 3);
+                const activeImageRow = Math.floor(
+                  activeListViewImageRef.current / 3
+                );
                 listViewImages.forEach((item, index) => {
                   const row = Math.floor(index / 3);
                   const col = index % 3;
 
                   const topLeftX =
-                    width / 2 - 2.5 * IMAGE_GRID_WIDTH - 3 * IMAGE_GRID_GAP_X;
+                    canvasSizeRef.current.width / 2 -
+                    2.5 * IMAGE_GRID_WIDTH -
+                    3 * IMAGE_GRID_GAP_X;
                   const topLeftY = IMAGE_GRID_HEIGHT + IMAGE_GRID_GAP_Y;
                   tl.to(
                     item.position,
