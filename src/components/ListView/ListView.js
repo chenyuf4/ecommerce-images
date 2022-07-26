@@ -193,8 +193,8 @@ const ListView = ({
 
     centerImagePosRef.current.currentY = newCurrentPosY;
     centerImagePosRef.current.currentZ = newCurrentPosZ;
-    if (newCurrentPosZ !== centerImagePosRef.current.targetZ) invalidate();
-  }, [centerImagePosRef, invalidate, mainViewGroupRef, mode, scrollPosRef]);
+    // if (newCurrentPosZ !== centerImagePosRef.current.targetZ) invalidate();
+  }, [centerImagePosRef, mainViewGroupRef, mode, scrollPosRef]);
 
   useFrame(() => {
     if (!mounted.current) return;

@@ -67,7 +67,7 @@ const Home = ({ canvasSizeRef, scrollPosRef, activeListViewImageRef }) => {
                     {
                       x:
                         canvasSizeRef.current.width / 2 +
-                        (IMAGE_WIDTH_CENTER * 0.5) / 2 +
+                        IMAGE_WIDTH_CENTER / 2 +
                         index,
                       y: index * IMAGE_Y_GAP_CENTER,
                       z: -index * IMAGE_Z_GAP_CENTER,
@@ -177,7 +177,7 @@ const Home = ({ canvasSizeRef, scrollPosRef, activeListViewImageRef }) => {
                     {
                       x:
                         canvasSizeRef.current.width / 2 +
-                        (IMAGE_WIDTH_CENTER * 0.5) / 2 +
+                        IMAGE_WIDTH_CENTER / 2 +
                         index,
                       delay: index * 0.035,
                       duration: 0.65,

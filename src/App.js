@@ -104,15 +104,15 @@ function App() {
 
       // update center images state, position, scale when scrolling
       if (mode === "grid") {
-        mainViewGroupRef.current.children.forEach((item, index) => {
-          item.position.x =
-            canvasSizeRef.current.width / 2 +
-            (IMAGE_WIDTH_CENTER * 0.5) / 2 +
-            (index - finalActiveImage);
-          item.position.y = (index - finalActiveImage) * IMAGE_Y_GAP_CENTER;
-          item.position.z = -(index - finalActiveImage) * IMAGE_Z_GAP_CENTER;
-          item.scale.x = IMAGE_WIDTH_CENTER / 2;
-        });
+        // mainViewGroupRef.current.children.forEach((item, index) => {
+        //   item.position.x =
+        //     canvasSizeRef.current.width / 2 +
+        //     IMAGE_WIDTH_CENTER / 2 +
+        //     (index - finalActiveImage);
+        //   item.position.y = (index - finalActiveImage) * IMAGE_Y_GAP_CENTER;
+        //   item.position.z = -(index - finalActiveImage) * IMAGE_Z_GAP_CENTER;
+        //   item.scale.x = IMAGE_WIDTH_CENTER / 2;
+        // });
         centerImagePosRef.current.targetZ =
           finalActiveImage * IMAGE_Z_GAP_CENTER;
         centerImagePosRef.current.currentZ =
