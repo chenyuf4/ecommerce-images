@@ -21,16 +21,12 @@ import {
 } from "util/utilFormat";
 import { invalidate } from "@react-three/fiber";
 import { Power2 } from "gsap";
-const Home = ({
-  canvasSizeRef,
-  scrollPosRef,
-  modeRef,
-  activeListViewImageRef,
-}) => {
+const Home = ({ canvasSizeRef, scrollPosRef, activeListViewImageRef }) => {
   const numImages = imagesArr.length;
   const mainViewGroupRef = useStore((state) => state.mainViewGroupRef);
   const listViewGroupRef = useStore((state) => state.listViewGroupRef);
-
+  const mode = useStore((state) => state.mode);
+  const setMode = useStore((state) => state.setMode);
   return (
     <div className={styles["home-container"]}>
       <div className="p-5 d-flex justify-content-between align-items-center">
@@ -46,15 +42,15 @@ const Home = ({
           <div
             className={clsx(
               styles["mode-logo-container"],
-              modeRef.current === "grid" && styles["mode-inactive"],
+              mode === "grid" && styles["mode-inactive"],
               "d-flex justify-content-center align-items-center cursor-pointer"
             )}
             onClick={() => {
               if (
-                modeRef.current !== "list" &&
+                mode !== "list" &&
                 scrollPosRef.current.current === scrollPosRef.current.target
               ) {
-                modeRef.current = "list";
+                setMode("list");
                 const animatedImages = mainViewGroupRef.current.children.slice(
                   activeListViewImageRef.current,
                   Math.min(activeListViewImageRef.current + 4, numImages)
@@ -157,15 +153,15 @@ const Home = ({
           <div
             className={clsx(
               styles["mode-logo-container"],
-              modeRef.current === "list" && styles["mode-inactive"],
+              mode === "list" && styles["mode-inactive"],
               "ms-3 d-flex justify-content-center align-items-center cursor-pointer"
             )}
             onClick={() => {
               if (
-                modeRef.current !== "grid" &&
+                mode !== "grid" &&
                 scrollPosRef.current.current === scrollPosRef.current.target
               ) {
-                modeRef.current = "grid";
+                setMode("grid");
                 const animatedImages = mainViewGroupRef.current.children.slice(
                   activeListViewImageRef.current,
                   Math.min(activeListViewImageRef.current + 4, numImages)

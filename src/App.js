@@ -36,13 +36,13 @@ function App() {
     width: 0,
     height: 0,
   });
-  const modeRef = useRef("list");
+  const mode = useStore((state) => state.mode);
   const activeListViewImageRef = useRef(0);
   const mainViewGroupRef = useStore((state) => state.mainViewGroupRef);
   const onWheelHandler = useCallback(
     (e) => {
       const scrollLimit =
-        modeRef.current === "list"
+        mode === "list"
           ? (numImages - 1) * (IMAGE_WIDTH_SMALL + IMAGE_GAP_SMALL)
           : (numRows - 1) * (IMAGE_GRID_HEIGHT + IMAGE_GRID_GAP_Y);
       const { pixelY } = normalizeWheel(e);
@@ -82,7 +82,7 @@ function App() {
         const finalTargetPosGrid = defaultPosGrid - target;
 
         if (
-          modeRef.current === "list" &&
+          mode === "list" &&
           finalActiveImage === -1 &&
           finalTargetPosList >= defaultPosX - IMAGE_WIDTH_SMALL / 2
         ) {
@@ -90,7 +90,7 @@ function App() {
         }
 
         if (
-          modeRef.current === "grid" &&
+          mode === "grid" &&
           finalActiveImage === -1 &&
           index % 3 === 0 &&
           (finalTargetPosGrid <= IMAGE_GRID_HEIGHT + IMAGE_GRID_GAP_Y ||
@@ -100,7 +100,7 @@ function App() {
         }
       });
 
-      if (modeRef.current === "grid") {
+      if (mode === "grid") {
         mainViewGroupRef.current.children.forEach((item, index) => {
           item.position.x =
             canvasSizeRef.current.width / 2 +
@@ -121,7 +121,7 @@ function App() {
 
       invalidate();
     },
-    [mainViewGroupRef, numImages, numRows]
+    [mainViewGroupRef, mode, numImages, numRows]
   );
 
   useEffect(() => {
@@ -133,7 +133,6 @@ function App() {
   return (
     <>
       <Home
-        modeRef={modeRef}
         canvasSizeRef={canvasSizeRef}
         scrollPosRef={scrollPosRef}
         activeListViewImageRef={activeListViewImageRef}
@@ -161,14 +160,12 @@ function App() {
           />
           <color attach="background" args={["#ffffff"]} />
           <ListView
-            modeRef={modeRef}
             centerImagePosRef={centerImagePosRef}
             scrollPosRef={scrollPosRef}
             activeListViewImageRef={activeListViewImageRef}
           />
           <ProgressBar
             activeListViewImageRef={activeListViewImageRef}
-            modeRef={modeRef}
             scrollPosRef={scrollPosRef}
           />
         </Suspense>

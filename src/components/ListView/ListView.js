@@ -79,12 +79,12 @@ const CenterImageBlock = ({ url, index }) => {
 const ListView = ({
   scrollPosRef,
   centerImagePosRef,
-  modeRef,
   activeListViewImageRef,
 }) => {
   const { viewport, invalidate } = useThree();
   const { width } = viewport;
   console.log("render");
+  const mode = useStore((state) => state.mode);
   const mounted = useRefMounted();
 
   const mainViewGroupRef = useStore((state) => state.mainViewGroupRef);
@@ -107,23 +107,23 @@ const ListView = ({
 
     imagesGroup.forEach((imageMesh, index) => {
       const defaultPos =
-        modeRef.current === "list"
+        mode === "list"
           ? defaultPosX + index * (IMAGE_WIDTH_SMALL + IMAGE_GAP_SMALL)
           : defaultPosY -
             Math.floor(index / 3) * (IMAGE_GRID_HEIGHT + IMAGE_GRID_GAP_Y);
       const newPos =
-        modeRef.current === "list"
+        mode === "list"
           ? defaultPos + newCurrentPos
           : defaultPos - newCurrentPos;
       if (
-        modeRef.current === "list" &&
+        mode === "list" &&
         newActiveImage === -1 &&
         newPos >= defaultPosX - IMAGE_WIDTH_SMALL / 2
       ) {
         newActiveImage = index;
       }
       if (
-        modeRef.current === "grid" &&
+        mode === "grid" &&
         newActiveImage === -1 &&
         index % 3 === 0 &&
         (newPos <= IMAGE_GRID_HEIGHT + IMAGE_GRID_GAP_Y ||
@@ -132,8 +132,8 @@ const ListView = ({
         newActiveImage = index;
       }
 
-      if (modeRef.current === "list") imageMesh.position.x = newPos;
-      if (modeRef.current === "grid") imageMesh.position.y = newPos;
+      if (mode === "list") imageMesh.position.x = newPos;
+      if (mode === "grid") imageMesh.position.y = newPos;
     });
 
     // update main images at the center
@@ -157,7 +157,7 @@ const ListView = ({
     invalidate,
     listViewGroupRef,
     mainViewGroupRef,
-    modeRef,
+    mode,
     scrollPosRef,
     width,
   ]);
@@ -177,10 +177,15 @@ const ListView = ({
       newCurrentPosY = (targetZ * 4) / 7;
     }
     const centerImagesGroup = mainViewGroupRef.current.children;
-    modeRef.current === "list" &&
+    mode === "list" &&
       centerImagesGroup.forEach((imageMesh, index) => {
         const defaultPosY = index * IMAGE_Y_GAP_CENTER;
         const defaultPosZ = -index * IMAGE_Z_GAP_CENTER;
+        imageMesh.material.uniforms.planeDimension.value = [
+          1,
+          (IMAGE_HEIGHT_CENTER / IMAGE_WIDTH_CENTER) *
+            (IMAGE_DIMENSION.width / IMAGE_DIMENSION.height),
+        ];
         imageMesh.scale.x = IMAGE_WIDTH_CENTER;
         imageMesh.position.x = 0;
         imageMesh.position.y = defaultPosY - newCurrentPosY;
@@ -190,7 +195,7 @@ const ListView = ({
     centerImagePosRef.current.currentY = newCurrentPosY;
     centerImagePosRef.current.currentZ = newCurrentPosZ;
     if (newCurrentPosZ !== centerImagePosRef.current.targetZ) invalidate();
-  }, [centerImagePosRef, invalidate, mainViewGroupRef, modeRef, scrollPosRef]);
+  }, [centerImagePosRef, invalidate, mainViewGroupRef, mode, scrollPosRef]);
 
   useFrame(() => {
     if (!mounted.current) return;
