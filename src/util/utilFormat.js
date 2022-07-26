@@ -167,12 +167,14 @@ export const imagesArr = [
 
 // 0.848
 //0.477
+
+// below is for the list mode
 export const IMAGE_WIDTH_SMALL = 0.9;
 export const IMAGE_HEIGHT_SMALL = 0.5;
 export const IMAGE_GAP_SMALL = 0.1;
 
-export const IMAGE_WIDTH_CENTER = 0.9 * 6;
-export const IMAGE_HEIGHT_CENTER = 0.5 * 6;
+export const IMAGE_WIDTH_CENTER = IMAGE_WIDTH_SMALL * 6;
+export const IMAGE_HEIGHT_CENTER = IMAGE_HEIGHT_SMALL * 6;
 export const IMAGE_Z_GAP_CENTER = 0.7;
 export const IMAGE_Y_GAP_CENTER = 0.4;
 
@@ -180,3 +182,11 @@ export const IMAGE_DIMENSION = {
   width: 880,
   height: 880,
 };
+
+// below is for the grid mode
+export const IMAGE_GRID_WIDTH = IMAGE_WIDTH_SMALL * 3.7;
+export const IMAGE_GRID_HEIGHT = IMAGE_HEIGHT_SMALL * 3.7;
+export const IMAGE_GRID_GAP_X = IMAGE_GAP_SMALL * 1.8;
+export const IMAGE_GRID_GAP_Y = IMAGE_GRID_GAP_X;
+
+export const imgListGroupPadding = 0.35;

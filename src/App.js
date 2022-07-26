@@ -8,12 +8,18 @@ import { useRef, useCallback, useEffect } from "react";
 import {
   imagesArr,
   IMAGE_GAP_SMALL,
+  IMAGE_GRID_GAP_Y,
+  IMAGE_GRID_HEIGHT,
+  IMAGE_WIDTH_CENTER,
   IMAGE_WIDTH_SMALL,
+  IMAGE_Y_GAP_CENTER,
   IMAGE_Z_GAP_CENTER,
+  imgListGroupPadding,
 } from "util/utilFormat";
 import ProgressBar from "components/ProgressBar/ProgressBar";
 import Home from "components/Home/Home";
 import { invalidate } from "@react-three/fiber";
+import useStore from "store/useStore";
 function App() {
   const scrollPosRef = useRef({
     current: 0,
@@ -25,13 +31,28 @@ function App() {
     currentZ: 0,
   });
   const numImages = imagesArr.length;
-  const scrollLimit = (numImages - 1) * (IMAGE_WIDTH_SMALL + IMAGE_GAP_SMALL);
+  const numRows = Math.ceil(numImages / 3);
+  const canvasSizeRef = useRef({
+    width: 0,
+    height: 0,
+  });
+  const mode = useStore((state) => state.mode);
+  const activeListViewImageRef = useRef(0);
+  const mainViewGroupRef = useStore((state) => state.mainViewGroupRef);
   const onWheelHandler = useCallback(
     (e) => {
+      const scrollLimit =
+        mode === "list"
+          ? (numImages - 1) * (IMAGE_WIDTH_SMALL + IMAGE_GAP_SMALL)
+          : (numRows - 1) * (IMAGE_GRID_HEIGHT + IMAGE_GRID_GAP_Y);
       const { pixelY } = normalizeWheel(e);
       const relativeSpeed = Math.min(Math.abs(pixelY), 100);
-      const scrollSpeed = relativeSpeed * (relativeSpeed < 40 ? 0.005 : 0.018);
+      const scrollSpeed = relativeSpeed * (relativeSpeed < 40 ? 0.005 : 0.015);
       scrollPosRef.current.scrollSpeed = relativeSpeed;
+      const defaultPosX =
+        -canvasSizeRef.current.width / 2 +
+        IMAGE_WIDTH_SMALL / 2 +
+        imgListGroupPadding;
       let direction = "L";
       if (pixelY < 0) {
         direction = "R";
@@ -48,20 +69,59 @@ function App() {
 
       let finalActiveImage = -1;
       Array.from({ length: imagesArr.length }).forEach((_, index) => {
-        const defaultPos = index * (IMAGE_WIDTH_SMALL + IMAGE_GAP_SMALL);
-        const finalTargetPos = defaultPos + target;
+        // for list
+        const defaultPosList =
+          defaultPosX + index * (IMAGE_WIDTH_SMALL + IMAGE_GAP_SMALL);
+        const finalTargetPosList = defaultPosList + target;
+        const row = Math.floor(index / 3);
+        // for grid
+        const defaultPosGrid =
+          IMAGE_GRID_HEIGHT +
+          IMAGE_GRID_GAP_Y -
+          row * (IMAGE_GRID_HEIGHT + IMAGE_GRID_GAP_Y);
+        const finalTargetPosGrid = defaultPosGrid - target;
+
         if (
+          mode === "list" &&
           finalActiveImage === -1 &&
-          finalTargetPos >= -IMAGE_WIDTH_SMALL / 2
+          finalTargetPosList >= defaultPosX - IMAGE_WIDTH_SMALL / 2
+        ) {
+          finalActiveImage = index;
+        }
+
+        if (
+          mode === "grid" &&
+          finalActiveImage === -1 &&
+          index % 3 === 0 &&
+          (finalTargetPosGrid <= IMAGE_GRID_HEIGHT + IMAGE_GRID_GAP_Y ||
+            Math.floor(index / 3) === Math.floor((numImages - 1) / 3))
         ) {
           finalActiveImage = index;
         }
       });
 
-      centerImagePosRef.current.targetZ = finalActiveImage * IMAGE_Z_GAP_CENTER;
+      if (mode === "grid") {
+        mainViewGroupRef.current.children.forEach((item, index) => {
+          item.position.x =
+            canvasSizeRef.current.width / 2 +
+            (IMAGE_WIDTH_CENTER * 0.5) / 2 +
+            (index - finalActiveImage);
+          item.position.y = (index - finalActiveImage) * IMAGE_Y_GAP_CENTER;
+          item.position.z = -(index - finalActiveImage) * IMAGE_Z_GAP_CENTER;
+          item.scale.x = IMAGE_WIDTH_CENTER / 2;
+        });
+        centerImagePosRef.current.targetZ =
+          finalActiveImage * IMAGE_Z_GAP_CENTER;
+        centerImagePosRef.current.currentZ =
+          finalActiveImage * IMAGE_Z_GAP_CENTER;
+      } else {
+        centerImagePosRef.current.targetZ =
+          finalActiveImage * IMAGE_Z_GAP_CENTER;
+      }
+
       invalidate();
     },
-    [scrollLimit]
+    [mainViewGroupRef, mode, numImages, numRows]
   );
 
   useEffect(() => {
@@ -70,16 +130,25 @@ function App() {
       window.removeEventListener("wheel", onWheelHandler);
     };
   }, [onWheelHandler]);
-
   return (
     <>
-      <Home />
+      <Home
+        canvasSizeRef={canvasSizeRef}
+        scrollPosRef={scrollPosRef}
+        activeListViewImageRef={activeListViewImageRef}
+      />
       <Canvas
         frameloop="demand"
         dpr={Math.max(window.devicePixelRatio, 2)}
         linear={true}
         flat={true}
         gl={{ antialias: true, alpha: true }}
+        onCreated={(state) => {
+          const { viewport } = state;
+          const { width, height } = viewport;
+          canvasSizeRef.current.width = width;
+          canvasSizeRef.current.height = height;
+        }}
       >
         <Suspense fallback={null}>
           <PerspectiveCamera
@@ -93,8 +162,12 @@ function App() {
           <ListView
             centerImagePosRef={centerImagePosRef}
             scrollPosRef={scrollPosRef}
+            activeListViewImageRef={activeListViewImageRef}
           />
-          <ProgressBar scrollPosRef={scrollPosRef} />
+          <ProgressBar
+            activeListViewImageRef={activeListViewImageRef}
+            scrollPosRef={scrollPosRef}
+          />
         </Suspense>
       </Canvas>
     </>

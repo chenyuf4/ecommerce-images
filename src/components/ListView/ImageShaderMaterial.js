@@ -29,7 +29,7 @@ class ImageShaderMaterial extends ShaderMaterial {
         float y = vUv.y;
         vec4 imageTexture = texture2D(tex, vec2((x - 0.5) * planeDimension.x + 0.5, (y - 0.5) * planeDimension.y + 0.4));
         float alphaValue = 1.0;
-        if (mode == 1.0 && (viewZ.z > 0.35 * gap || viewZ.z < -3.5 * gap)) {
+        if ((mode == 1.0 && (viewZ.z > 0.35 * gap || viewZ.z < -3.5 * gap)) || mode == 2.0) {
           alphaValue = 0.0;
         } else if (mode == 1.0 && viewZ.z < - gap) {
           alphaValue = 1.0 - ((abs(viewZ.z) - gap) / (3.5 * gap));
