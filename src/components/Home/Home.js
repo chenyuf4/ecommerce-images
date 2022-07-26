@@ -76,7 +76,7 @@ const Home = ({ canvasSizeRef, scrollPosRef, activeListViewImageRef }) => {
                       x: 0,
                       y: index * IMAGE_Y_GAP_CENTER,
                       z: -index * IMAGE_Z_GAP_CENTER,
-                      delay: index * 0.035,
+                      delay: index * 0.035 + 0.1,
                       duration: 0.65,
                       ease: Power2.easeOut,
                     },
@@ -88,7 +88,7 @@ const Home = ({ canvasSizeRef, scrollPosRef, activeListViewImageRef }) => {
                     },
                     {
                       x: IMAGE_WIDTH_CENTER,
-                      delay: index * 0.055,
+                      delay: index * 0.055 + 0.1,
                       duration: 1.2,
                       ease: Power2.easeOut,
                       onUpdate: function () {
@@ -105,6 +105,9 @@ const Home = ({ canvasSizeRef, scrollPosRef, activeListViewImageRef }) => {
                 });
 
                 const listViewImages = listViewGroupRef.current.children;
+                const activeImageRow = Math.floor(
+                  activeListViewImageRef.current / 3
+                );
                 listViewImages.forEach((item, index) => {
                   const defaultPosX =
                     -canvasSizeRef.current.width / 2 +
@@ -121,6 +124,10 @@ const Home = ({ canvasSizeRef, scrollPosRef, activeListViewImageRef }) => {
                         -canvasSizeRef.current.height / 2 +
                         IMAGE_HEIGHT_SMALL / 2 +
                         imgListGroupPadding,
+                      duration: 0.75,
+                      ease: Power2.easeOut,
+                      delay:
+                        Math.abs(Math.floor(index / 3) - activeImageRow) * 0.05,
                     },
                     "start"
                   ).to(
@@ -128,6 +135,10 @@ const Home = ({ canvasSizeRef, scrollPosRef, activeListViewImageRef }) => {
                     {
                       x: IMAGE_WIDTH_SMALL,
                       y: IMAGE_HEIGHT_SMALL,
+                      duration: 0.85,
+                      delay:
+                        Math.abs(Math.floor(index / 3) - activeImageRow) * 0.05,
+                      ease: Power2.easeOut,
                       onUpdate: function () {
                         const valX = this.targets()[0].x;
                         const valY = this.targets()[0].y;
@@ -225,6 +236,12 @@ const Home = ({ canvasSizeRef, scrollPosRef, activeListViewImageRef }) => {
                         topLeftY +
                         (activeImageRow - row) *
                           (IMAGE_GRID_GAP_Y + IMAGE_GRID_HEIGHT),
+                      duration: 0.75,
+                      ease: Power2.easeOut,
+                      delay:
+                        Math.abs(Math.floor(index / 3) - activeImageRow) *
+                          0.05 +
+                        0.05,
                     },
                     "start"
                   ).to(
@@ -232,6 +249,12 @@ const Home = ({ canvasSizeRef, scrollPosRef, activeListViewImageRef }) => {
                     {
                       x: IMAGE_GRID_WIDTH,
                       y: IMAGE_GRID_HEIGHT,
+                      duration: 0.85,
+                      ease: Power2.easeOut,
+                      delay:
+                        Math.abs(Math.floor(index / 3) - activeImageRow) *
+                          0.05 +
+                        0.05,
                       onUpdate: function () {
                         const valX = this.targets()[0].x;
                         const valY = this.targets()[0].y;
