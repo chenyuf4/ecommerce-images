@@ -83,7 +83,6 @@ const ListView = ({
 }) => {
   const { viewport, invalidate } = useThree();
   const { width } = viewport;
-  console.log("render");
   const mode = useStore((state) => state.mode);
   const mounted = useRefMounted();
 

@@ -73,14 +73,16 @@ function App() {
         const defaultPosList =
           defaultPosX + index * (IMAGE_WIDTH_SMALL + IMAGE_GAP_SMALL);
         const finalTargetPosList = defaultPosList + target;
-        const row = Math.floor(index / 3);
+
         // for grid
+        const row = Math.floor(index / 3);
         const defaultPosGrid =
           IMAGE_GRID_HEIGHT +
           IMAGE_GRID_GAP_Y -
           row * (IMAGE_GRID_HEIGHT + IMAGE_GRID_GAP_Y);
         const finalTargetPosGrid = defaultPosGrid - target;
 
+        // calculate final active images
         if (
           mode === "list" &&
           finalActiveImage === -1 &&
@@ -100,6 +102,7 @@ function App() {
         }
       });
 
+      // update center images state, position, scale when scrolling
       if (mode === "grid") {
         mainViewGroupRef.current.children.forEach((item, index) => {
           item.position.x =
