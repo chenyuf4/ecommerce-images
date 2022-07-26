@@ -10,6 +10,12 @@ import {
   IMAGE_DIMENSION,
   IMAGE_HEIGHT_SMALL,
   IMAGE_WIDTH_SMALL,
+  IMAGE_GRID_GAP_X,
+  IMAGE_GRID_WIDTH,
+  IMAGE_GRID_HEIGHT,
+  IMAGE_GRID_GAP_Y,
+  imgListGroupPadding,
+  IMAGE_GAP_SMALL,
 } from "util/utilFormat";
 import { invalidate } from "@react-three/fiber";
 import { Power2 } from "gsap";
@@ -18,6 +24,7 @@ const Home = ({ scrollPosRef }) => {
   const setMode = useStore((state) => state.setMode);
   const numImages = imagesArr.length;
   const mainViewGroupRef = useStore((state) => state.mainViewGroupRef);
+  const listViewGroupRef = useStore((state) => state.listViewGroupRef);
   const activeListViewImage = useStore((state) => state.activeListViewImage);
   const canvasSize = useStore((state) => state.canvasSize);
   const { width, height } = canvasSize;
@@ -52,9 +59,15 @@ const Home = ({ scrollPosRef }) => {
                 const tl = gsap.timeline({
                   onUpdate: () => invalidate(),
                   onUpdateParams: () => invalidate(),
-                  onStart: () => invalidate(),
+                  onStart: () => {
+                    invalidate();
+                    mainViewGroupRef.current.children.forEach((item) => {
+                      item.material.uniforms.mode.value = 1.0;
+                    });
+                  },
                   onComplete: () => {
                     mainViewGroupRef.current.children.forEach((item) => {
+                      console.log(item.material.uniforms.mode.value);
                       item.position.x = 0;
                       item.scale.x = IMAGE_WIDTH_CENTER;
                       item.material.uniforms.planeDimension.value = [
@@ -100,6 +113,45 @@ const Home = ({ scrollPosRef }) => {
                     "start"
                   );
                 });
+
+                const listViewImages = listViewGroupRef.current.children;
+                listViewImages.forEach((item, index) => {
+                  const defaultPosX =
+                    -width / 2 + IMAGE_WIDTH_SMALL / 2 + imgListGroupPadding;
+                  tl.to(
+                    item.position,
+                    {
+                      x:
+                        defaultPosX +
+                        (index - activeListViewImage) *
+                          (IMAGE_WIDTH_SMALL + IMAGE_GAP_SMALL),
+                      y:
+                        -height / 2 +
+                        IMAGE_HEIGHT_SMALL / 2 +
+                        imgListGroupPadding,
+                    },
+                    "start"
+                  ).to(
+                    item.scale,
+                    {
+                      x: IMAGE_WIDTH_SMALL,
+                      y: IMAGE_HEIGHT_SMALL,
+                      onUpdate: function () {
+                        const valX = this.targets()[0].x;
+                        const valY = this.targets()[0].y;
+                        item.material.uniforms.planeDimension.value = [
+                          1,
+                          (valY / valX) *
+                            (IMAGE_DIMENSION.width / IMAGE_DIMENSION.height),
+                        ];
+                      },
+                    },
+                    "start"
+                  );
+                });
+
+                scrollPosRef.current.current = scrollPosRef.current.target =
+                  -activeListViewImage * (IMAGE_GAP_SMALL + IMAGE_WIDTH_SMALL);
               }
             }}
           >
@@ -125,6 +177,11 @@ const Home = ({ scrollPosRef }) => {
                   onUpdate: () => invalidate(),
                   onUpdateParams: () => invalidate(),
                   onStart: () => invalidate(),
+                  onComplete: () => {
+                    mainViewGroupRef.current.children.forEach(
+                      (item) => (item.material.uniforms.mode.value = 2.0)
+                    );
+                  },
                 });
                 animatedImages.forEach((item, index) => {
                   tl.to(
@@ -155,6 +212,47 @@ const Home = ({ scrollPosRef }) => {
                     "start"
                   );
                 });
+
+                const listViewImages = listViewGroupRef.current.children;
+                const activeImageRow = Math.floor(activeListViewImage / 3);
+                listViewImages.forEach((item, index) => {
+                  const row = Math.floor(index / 3);
+                  const col = index % 3;
+
+                  const topLeftX =
+                    width / 2 - 2.5 * IMAGE_GRID_WIDTH - 3 * IMAGE_GRID_GAP_X;
+                  const topLeftY = IMAGE_GRID_HEIGHT + IMAGE_GRID_GAP_Y;
+                  tl.to(
+                    item.position,
+                    {
+                      x: topLeftX + col * (IMAGE_GRID_GAP_X + IMAGE_GRID_WIDTH),
+                      y:
+                        topLeftY +
+                        (activeImageRow - row) *
+                          (IMAGE_GRID_GAP_Y + IMAGE_GRID_HEIGHT),
+                    },
+                    "start"
+                  ).to(
+                    item.scale,
+                    {
+                      x: IMAGE_GRID_WIDTH,
+                      y: IMAGE_GRID_HEIGHT,
+                      onUpdate: function () {
+                        const valX = this.targets()[0].x;
+                        const valY = this.targets()[0].y;
+                        item.material.uniforms.planeDimension.value = [
+                          1,
+                          (valY / valX) *
+                            (IMAGE_DIMENSION.width / IMAGE_DIMENSION.height),
+                        ];
+                      },
+                    },
+                    "start"
+                  );
+                });
+
+                scrollPosRef.current.current = scrollPosRef.current.target =
+                  -activeImageRow * (IMAGE_GRID_GAP_Y + IMAGE_GRID_HEIGHT);
               }
             }}
           >

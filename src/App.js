@@ -8,6 +8,8 @@ import { useRef, useCallback, useEffect } from "react";
 import {
   imagesArr,
   IMAGE_GAP_SMALL,
+  IMAGE_GRID_GAP_Y,
+  IMAGE_GRID_HEIGHT,
   IMAGE_WIDTH_SMALL,
   IMAGE_Z_GAP_CENTER,
   imgListGroupPadding,
@@ -27,11 +29,16 @@ function App() {
     currentZ: 0,
   });
   const numImages = imagesArr.length;
-  const scrollLimit = (numImages - 1) * (IMAGE_WIDTH_SMALL + IMAGE_GAP_SMALL);
+  const numRows = Math.ceil(numImages / 3);
   const canvasSize = useStore((state) => state.canvasSize);
+  const mode = useStore((state) => state.mode);
   const { width } = canvasSize;
   const onWheelHandler = useCallback(
     (e) => {
+      const scrollLimit =
+        mode === "list"
+          ? (numImages - 1) * (IMAGE_WIDTH_SMALL + IMAGE_GAP_SMALL)
+          : (numRows - 1) * (IMAGE_GRID_HEIGHT + IMAGE_GRID_GAP_Y);
       const { pixelY } = normalizeWheel(e);
       const relativeSpeed = Math.min(Math.abs(pixelY), 100);
       const scrollSpeed = relativeSpeed * (relativeSpeed < 40 ? 0.005 : 0.015);
@@ -54,12 +61,32 @@ function App() {
 
       let finalActiveImage = -1;
       Array.from({ length: imagesArr.length }).forEach((_, index) => {
-        const defaultPos =
+        // for list
+        const defaultPosList =
           defaultPosX + index * (IMAGE_WIDTH_SMALL + IMAGE_GAP_SMALL);
-        const finalTargetPos = defaultPos + target;
+        const finalTargetPosList = defaultPosList + target;
+        const row = Math.floor(index / 3);
+        // for grid
+        const defaultPosGrid =
+          IMAGE_GRID_HEIGHT +
+          IMAGE_GRID_GAP_Y -
+          row * (IMAGE_GRID_HEIGHT + IMAGE_GRID_GAP_Y);
+        const finalTargetPosGrid = defaultPosGrid - target;
+
         if (
+          mode === "list" &&
           finalActiveImage === -1 &&
-          finalTargetPos >= defaultPosX - IMAGE_WIDTH_SMALL / 2
+          finalTargetPosList >= defaultPosX - IMAGE_WIDTH_SMALL / 2
+        ) {
+          finalActiveImage = index;
+        }
+
+        if (
+          mode === "grid" &&
+          finalActiveImage === -1 &&
+          index % 3 === 0 &&
+          (finalTargetPosGrid <= IMAGE_GRID_HEIGHT + IMAGE_GRID_GAP_Y ||
+            Math.floor(index / 3) === Math.floor((numImages - 1) / 3))
         ) {
           finalActiveImage = index;
         }
@@ -68,7 +95,7 @@ function App() {
       centerImagePosRef.current.targetZ = finalActiveImage * IMAGE_Z_GAP_CENTER;
       invalidate();
     },
-    [scrollLimit, width]
+    [mode, numImages, numRows, width]
   );
 
   useEffect(() => {
