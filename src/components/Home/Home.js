@@ -135,13 +135,19 @@ const Home = ({ canvasSizeRef, scrollPosRef, activeListViewImageRef }) => {
                     {
                       x: IMAGE_WIDTH_SMALL,
                       y: IMAGE_HEIGHT_SMALL,
-                      duration: 0.85,
+                      duration: 0.75,
                       delay:
                         Math.abs(Math.floor(index / 3) - activeImageRow) * 0.05,
                       ease: Power2.easeOut,
                       onUpdate: function () {
                         const valX = this.targets()[0].x;
                         const valY = this.targets()[0].y;
+                        const progress =
+                          Math.abs(valX - IMAGE_GRID_WIDTH) /
+                          (IMAGE_GRID_WIDTH - IMAGE_WIDTH_SMALL);
+                        if (index !== activeListViewImageRef.current)
+                          item.material.uniforms.listViewImageProgress.value =
+                            1 - progress;
                         item.material.uniforms.planeDimension.value = [
                           1,
                           (valY / valX) *
@@ -258,6 +264,11 @@ const Home = ({ canvasSizeRef, scrollPosRef, activeListViewImageRef }) => {
                       onUpdate: function () {
                         const valX = this.targets()[0].x;
                         const valY = this.targets()[0].y;
+                        const progress =
+                          Math.abs(valX - IMAGE_WIDTH_SMALL) /
+                          (IMAGE_GRID_WIDTH - IMAGE_WIDTH_SMALL);
+                        item.material.uniforms.listViewImageProgress.value =
+                          progress;
                         item.material.uniforms.planeDimension.value = [
                           1,
                           (valY / valX) *

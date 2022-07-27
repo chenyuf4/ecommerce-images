@@ -10,9 +10,7 @@ import {
   IMAGE_GAP_SMALL,
   IMAGE_GRID_GAP_Y,
   IMAGE_GRID_HEIGHT,
-  IMAGE_WIDTH_CENTER,
   IMAGE_WIDTH_SMALL,
-  IMAGE_Y_GAP_CENTER,
   IMAGE_Z_GAP_CENTER,
   imgListGroupPadding,
 } from "util/utilFormat";
@@ -38,7 +36,6 @@ function App() {
   });
   const mode = useStore((state) => state.mode);
   const activeListViewImageRef = useRef(0);
-  const mainViewGroupRef = useStore((state) => state.mainViewGroupRef);
   const onWheelHandler = useCallback(
     (e) => {
       const scrollLimit =
@@ -124,7 +121,7 @@ function App() {
 
       invalidate();
     },
-    [mainViewGroupRef, mode, numImages, numRows]
+    [mode, numImages, numRows]
   );
 
   useEffect(() => {

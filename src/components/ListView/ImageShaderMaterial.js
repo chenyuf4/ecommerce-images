@@ -21,9 +21,9 @@ class ImageShaderMaterial extends ShaderMaterial {
       varying vec4 viewZ;
       uniform vec2 planeDimension;
       uniform float gap;
-      uniform float activeImage;
       uniform float index;
       uniform float mode;
+      uniform float listViewImageProgress;
       void main() {
         float x = vUv.x;
         float y = vUv.y;
@@ -35,9 +35,9 @@ class ImageShaderMaterial extends ShaderMaterial {
           alphaValue = 1.0 - ((abs(viewZ.z) - gap) / (3.5 * gap));
         }
 
-        if (mode == 0.0 && index != activeImage) {
+        if (mode == 0.0) {
           float greyColor = (imageTexture.r + imageTexture.g + imageTexture.b) / 3.0;
-          gl_FragColor = vec4(greyColor,greyColor,greyColor, 1.0);
+          gl_FragColor = mix(vec4(greyColor,greyColor,greyColor, 1.0), imageTexture, listViewImageProgress);
         } else {
           gl_FragColor = vec4(imageTexture.x,imageTexture.y,imageTexture.z, alphaValue);
         }
@@ -47,9 +47,6 @@ class ImageShaderMaterial extends ShaderMaterial {
         planeDimension: {
           value: [1, 1],
         },
-        activeImage: {
-          value: 0,
-        },
         index: {
           value: 0,
         },
@@ -57,6 +54,9 @@ class ImageShaderMaterial extends ShaderMaterial {
           value: 0.0, // 0 is list image, 1 is center image
         },
         gap: {
+          value: 0,
+        },
+        listViewImageProgress: {
           value: 0,
         },
       },
@@ -87,14 +87,6 @@ class ImageShaderMaterial extends ShaderMaterial {
     this.uniforms.index.value = value;
   }
 
-  get activeImage() {
-    return this.uniforms.activeImage.value;
-  }
-
-  set activeImage(value) {
-    this.uniforms.activeImage.value = value;
-  }
-
   get mode() {
     return this.uniforms.mode.value;
   }
@@ -109,6 +101,14 @@ class ImageShaderMaterial extends ShaderMaterial {
 
   set gap(value) {
     this.uniforms.gap.value = value;
+  }
+
+  get listViewImageProgress() {
+    return this.uniforms.listViewImageProgress.value;
+  }
+
+  set listViewImageProgress(value) {
+    this.uniforms.listViewImageProgress.value = value;
   }
 }
 

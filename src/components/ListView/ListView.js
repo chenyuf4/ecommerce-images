@@ -136,15 +136,12 @@ const ListView = ({
     });
 
     // update main images at the center
-    const centerImagesGroup = mainViewGroupRef.current.children;
     const prevActiveImage = activeListViewImageRef.current;
     // update only when active image is changed
     if (prevActiveImage !== newActiveImage) {
-      centerImagesGroup.forEach((imageMesh) => {
-        imageMesh.material.uniforms.activeImage.value = newActiveImage;
-      });
-      imagesGroup.forEach((imageMesh) => {
-        imageMesh.material.uniforms.activeImage.value = newActiveImage;
+      imagesGroup.forEach((imageMesh, index) => {
+        imageMesh.material.uniforms.listViewImageProgress.value =
+          index === newActiveImage || mode === "grid" ? 1.0 : 0.0;
       });
     }
 
@@ -155,7 +152,6 @@ const ListView = ({
     activeListViewImageRef,
     invalidate,
     listViewGroupRef,
-    mainViewGroupRef,
     mode,
     scrollPosRef,
     width,
