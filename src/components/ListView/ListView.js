@@ -11,30 +11,33 @@ import {
   IMAGE_DIMENSION,
   IMAGE_GRID_HEIGHT,
   IMAGE_GRID_GAP_Y,
+  IMAGE_GRID_GAP_X,
   imgListGroupPadding,
+  IMAGE_GRID_WIDTH,
 } from "util/utilFormat";
 import useRefMounted from "util/useRefMounted";
 import { useFrame, useThree } from "@react-three/fiber";
 import "./ImageShaderMaterial";
-import { useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
 import * as THREE from "three";
 import useStore from "store/useStore";
 const CENTER_IMAGE_LERP_SLOW = 0.075;
 const CENTER_IMAGE_LERP_FAST = 0.12;
 
 const planeGeo = new THREE.PlaneBufferGeometry(1, 1);
-const SmallImageBlock = ({ url, index }) => {
+const SmallImageBlock = React.memo(({ url, index }) => {
   const [imgTexture] = useTexture([url]);
   const { viewport } = useThree();
   const { height, width } = viewport;
   const defaultPosX = -width / 2 + IMAGE_WIDTH_SMALL / 2 + imgListGroupPadding;
+  console.log("rendered");
   return (
     <mesh
-      position={[
-        defaultPosX + index * (IMAGE_WIDTH_SMALL + IMAGE_GAP_SMALL),
-        -height / 2 + IMAGE_HEIGHT_SMALL / 2 + imgListGroupPadding,
-        0,
-      ]}
+      // position={[
+      //   defaultPosX + index * (IMAGE_WIDTH_SMALL + IMAGE_GAP_SMALL),
+      //   -height / 2 + IMAGE_HEIGHT_SMALL / 2 + imgListGroupPadding,
+      //   0,
+      // ]}
       scale={[IMAGE_WIDTH_SMALL, IMAGE_HEIGHT_SMALL, 1]}
       geometry={planeGeo}
     >
@@ -50,9 +53,9 @@ const SmallImageBlock = ({ url, index }) => {
       />
     </mesh>
   );
-};
+});
 
-const CenterImageBlock = ({ url, index }) => {
+const CenterImageBlock = React.memo(({ url, index }) => {
   const [imgTexture] = useTexture([url]);
   return (
     <mesh
@@ -68,13 +71,12 @@ const CenterImageBlock = ({ url, index }) => {
             (IMAGE_DIMENSION.width / IMAGE_DIMENSION.height),
         ]}
         tex={imgTexture}
-        activeImage={0}
         index={index}
         mode={1.0}
       />
     </mesh>
   );
-};
+});
 
 const ListView = ({
   scrollPosRef,
@@ -82,7 +84,7 @@ const ListView = ({
   activeListViewImageRef,
 }) => {
   const { viewport, invalidate } = useThree();
-  const { width } = viewport;
+  const { width, height } = viewport;
   const mode = useStore((state) => state.mode);
   const mounted = useRefMounted();
 
@@ -191,6 +193,92 @@ const ListView = ({
     centerImagePosRef.current.currentZ = newCurrentPosZ;
     // if (newCurrentPosZ !== centerImagePosRef.current.targetZ) invalidate();
   }, [centerImagePosRef, mainViewGroupRef, mode, scrollPosRef]);
+
+  const resizeHandler = useCallback(() => {
+    const isList = mode === "list";
+    const defaultPosX =
+      -width / 2 + IMAGE_WIDTH_SMALL / 2 + imgListGroupPadding;
+    const topLeftX = width / 2 - 2.5 * IMAGE_GRID_WIDTH - 3 * IMAGE_GRID_GAP_X;
+    const topLeftY = IMAGE_GRID_HEIGHT + IMAGE_GRID_GAP_Y;
+    listViewGroupRef.current.children.forEach((item, index) => {
+      const col = index % 3;
+      const row = Math.floor(index / 3);
+      const activeRow = Math.floor(activeListViewImageRef.current / 3);
+      item.position.x = isList
+        ? defaultPosX +
+          (index - activeListViewImageRef.current) *
+            (IMAGE_WIDTH_SMALL + IMAGE_GAP_SMALL)
+        : topLeftX + col * (IMAGE_GRID_WIDTH + IMAGE_GRID_GAP_X);
+      item.position.y = isList
+        ? -height / 2 + IMAGE_HEIGHT_SMALL / 2 + imgListGroupPadding
+        : topLeftY - (row - activeRow) * (IMAGE_GRID_HEIGHT + IMAGE_GRID_GAP_Y);
+      item.position.z = 0;
+      item.scale.x = isList ? IMAGE_WIDTH_SMALL : IMAGE_GRID_WIDTH;
+      item.scale.y = isList ? IMAGE_HEIGHT_SMALL : IMAGE_GRID_HEIGHT;
+
+      item.material.uniforms.listViewImageProgress.value =
+        !isList || index === activeListViewImageRef.current ? 1 : 0;
+      item.material.uniforms.planeDimension.value = [
+        1,
+        (IMAGE_HEIGHT_SMALL / IMAGE_WIDTH_SMALL) *
+          (IMAGE_DIMENSION.width / IMAGE_DIMENSION.height),
+      ];
+      item.material.uniforms.listViewImageProgress.value =
+        !isList || index === activeListViewImageRef.current ? 1 : 0;
+    });
+
+    //
+    mainViewGroupRef.current.children.forEach((item, index) => {
+      item.position.x = isList
+        ? 0
+        : width / 2 +
+          IMAGE_WIDTH_CENTER * 2 +
+          Math.abs(index - activeListViewImageRef.current);
+      item.position.y =
+        (index - activeListViewImageRef.current) * IMAGE_Y_GAP_CENTER;
+      item.position.z =
+        -(index - activeListViewImageRef.current) * IMAGE_Z_GAP_CENTER;
+
+      item.scale.x = isList ? IMAGE_WIDTH_CENTER : IMAGE_WIDTH_CENTER * 0.5;
+      item.scale.y = IMAGE_HEIGHT_CENTER;
+
+      item.material.uniforms.planeDimension.value = isList
+        ? [
+            1,
+            (IMAGE_HEIGHT_CENTER / IMAGE_WIDTH_CENTER) *
+              (IMAGE_DIMENSION.width / IMAGE_DIMENSION.height),
+          ]
+        : [
+            0.5,
+            (IMAGE_HEIGHT_CENTER / IMAGE_WIDTH_CENTER) *
+              (IMAGE_DIMENSION.width / IMAGE_DIMENSION.height),
+          ];
+    });
+  }, [
+    activeListViewImageRef,
+    height,
+    listViewGroupRef,
+    mainViewGroupRef,
+    mode,
+    width,
+  ]);
+  useEffect(() => {
+    if (mounted.current && mode === "list") {
+      listViewGroupRef.current.children.forEach((item, index) => {
+        const defaultPosX =
+          -width / 2 + IMAGE_WIDTH_SMALL / 2 + imgListGroupPadding;
+        item.position.x =
+          defaultPosX + index * (IMAGE_WIDTH_SMALL + IMAGE_GAP_SMALL);
+        item.position.y =
+          -height / 2 + IMAGE_HEIGHT_SMALL / 2 + imgListGroupPadding;
+      });
+    }
+  });
+
+  useEffect(() => {
+    window.addEventListener("resize", resizeHandler);
+    return () => window.removeEventListener("resize", resizeHandler);
+  }, [resizeHandler]);
 
   useFrame(() => {
     if (!mounted.current) return;
