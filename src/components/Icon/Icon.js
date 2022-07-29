@@ -7,9 +7,9 @@ const logoMap = {
   grid: GridLogo,
 };
 
-const Icon = ({ iconType = "logo" }) => {
+const Icon = ({ iconType = "logo", iconRef }) => {
   const LogoComponent = logoMap[iconType];
-  return <LogoComponent />;
+  return <LogoComponent ref={iconRef} />;
 };
 
 export default Icon;

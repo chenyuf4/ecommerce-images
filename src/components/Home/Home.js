@@ -21,12 +21,23 @@ import {
 } from "util/utilFormat";
 import { invalidate } from "@react-three/fiber";
 import { Power2 } from "gsap";
-const Home = ({ canvasSizeRef, scrollPosRef, activeListViewImageRef }) => {
+import { useEffect, useRef } from "react";
+const Home = ({
+  canvasSizeRef,
+  scrollPosRef,
+  activeListViewImageRef,
+  modeRef,
+}) => {
   const numImages = imagesArr.length;
   const mainViewGroupRef = useStore((state) => state.mainViewGroupRef);
   const listViewGroupRef = useStore((state) => state.listViewGroupRef);
-  const mode = useStore((state) => state.mode);
-  const setMode = useStore((state) => state.setMode);
+  const listIconRef = useRef();
+  const gridIconRef = useRef();
+
+  useEffect(() => {
+    gsap.set(listIconRef.current, { fill: "#000000" });
+  }, []);
+
   return (
     <div className={styles["home-container"]}>
       <div className="p-5 d-flex justify-content-between align-items-center">
@@ -42,15 +53,15 @@ const Home = ({ canvasSizeRef, scrollPosRef, activeListViewImageRef }) => {
           <div
             className={clsx(
               styles["mode-logo-container"],
-              mode === "grid" && styles["mode-inactive"],
               "d-flex justify-content-center align-items-center cursor-pointer"
             )}
             onClick={() => {
               if (
-                mode !== "list" &&
+                modeRef.current !== "list" &&
                 scrollPosRef.current.current === scrollPosRef.current.target
               ) {
-                setMode("list");
+                // setMode("list");
+                modeRef.current = "list";
                 const animatedImages = mainViewGroupRef.current.children.slice(
                   activeListViewImageRef.current,
                   Math.min(activeListViewImageRef.current + 4, numImages)
@@ -61,6 +72,17 @@ const Home = ({ canvasSizeRef, scrollPosRef, activeListViewImageRef }) => {
                   onUpdateParams: () => invalidate(),
                   onStart: () => invalidate(),
                 });
+                tl.fromTo(
+                  listIconRef.current,
+                  { fill: "#c9c8c6" },
+                  { fill: "#000000", duration: 0.4 },
+                  "start"
+                ).fromTo(
+                  gridIconRef.current,
+                  { fill: "#000000" },
+                  { fill: "#c9c8c6", duration: 0.4 },
+                  "start"
+                );
                 animatedImages.forEach((item, index) => {
                   tl.fromTo(
                     item.position,
@@ -165,20 +187,19 @@ const Home = ({ canvasSizeRef, scrollPosRef, activeListViewImageRef }) => {
               }
             }}
           >
-            <Icon iconType="slide" />
+            <Icon iconType="slide" iconRef={listIconRef} />
           </div>
           <div
             className={clsx(
               styles["mode-logo-container"],
-              mode === "list" && styles["mode-inactive"],
               "ms-3 d-flex justify-content-center align-items-center cursor-pointer"
             )}
             onClick={() => {
               if (
-                mode !== "grid" &&
+                modeRef.current !== "grid" &&
                 scrollPosRef.current.current === scrollPosRef.current.target
               ) {
-                setMode("grid");
+                modeRef.current = "grid";
                 const animatedImages = mainViewGroupRef.current.children.slice(
                   activeListViewImageRef.current,
                   Math.min(activeListViewImageRef.current + 4, numImages)
@@ -188,6 +209,17 @@ const Home = ({ canvasSizeRef, scrollPosRef, activeListViewImageRef }) => {
                   onUpdateParams: () => invalidate(),
                   onStart: () => invalidate(),
                 });
+                tl.fromTo(
+                  gridIconRef.current,
+                  { fill: "#c9c8c6" },
+                  { fill: "#000000", duration: 0.4 },
+                  "start"
+                ).fromTo(
+                  listIconRef.current,
+                  { fill: "#000000" },
+                  { fill: "#c9c8c6", duration: 0.4 },
+                  "start"
+                );
                 animatedImages.forEach((item, index) => {
                   tl.to(
                     item.position,
@@ -285,7 +317,7 @@ const Home = ({ canvasSizeRef, scrollPosRef, activeListViewImageRef }) => {
               }
             }}
           >
-            <Icon iconType="grid" />
+            <Icon iconType="grid" iconRef={gridIconRef} />
           </div>
         </div>
       </div>

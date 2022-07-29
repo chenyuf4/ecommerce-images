@@ -17,7 +17,6 @@ import {
 import ProgressBar from "components/ProgressBar/ProgressBar";
 import Home from "components/Home/Home";
 import { invalidate } from "@react-three/fiber";
-import useStore from "store/useStore";
 function App() {
   const scrollPosRef = useRef({
     current: 0,
@@ -34,12 +33,12 @@ function App() {
     width: 0,
     height: 0,
   });
-  const mode = useStore((state) => state.mode);
+  const modeRef = useRef("list");
   const activeListViewImageRef = useRef(0);
   const onWheelHandler = useCallback(
     (e) => {
       const scrollLimit =
-        mode === "list"
+        modeRef.current === "list"
           ? (numImages - 1) * (IMAGE_WIDTH_SMALL + IMAGE_GAP_SMALL)
           : (numRows - 1) * (IMAGE_GRID_HEIGHT + IMAGE_GRID_GAP_Y);
       const { pixelY } = normalizeWheel(e);
@@ -81,7 +80,7 @@ function App() {
 
         // calculate final active images
         if (
-          mode === "list" &&
+          modeRef.current === "list" &&
           finalActiveImage === -1 &&
           finalTargetPosList >= defaultPosX - IMAGE_WIDTH_SMALL / 2
         ) {
@@ -89,7 +88,7 @@ function App() {
         }
 
         if (
-          mode === "grid" &&
+          modeRef.current === "grid" &&
           finalActiveImage === -1 &&
           index % 3 === 0 &&
           (finalTargetPosGrid <= IMAGE_GRID_HEIGHT + IMAGE_GRID_GAP_Y ||
@@ -100,7 +99,7 @@ function App() {
       });
 
       // update center images state, position, scale when scrolling
-      if (mode === "grid") {
+      if (modeRef.current === "grid") {
         centerImagePosRef.current.targetZ =
           finalActiveImage * IMAGE_Z_GAP_CENTER;
         centerImagePosRef.current.currentZ =
@@ -112,7 +111,7 @@ function App() {
 
       invalidate();
     },
-    [mode, numImages, numRows]
+    [numImages, numRows]
   );
 
   useEffect(() => {
@@ -128,6 +127,7 @@ function App() {
         canvasSizeRef={canvasSizeRef}
         scrollPosRef={scrollPosRef}
         activeListViewImageRef={activeListViewImageRef}
+        modeRef={modeRef}
       />
       <Canvas
         frameloop="demand"
@@ -157,10 +157,12 @@ function App() {
             centerImagePosRef={centerImagePosRef}
             scrollPosRef={scrollPosRef}
             activeListViewImageRef={activeListViewImageRef}
+            modeRef={modeRef}
           />
           <ProgressBar
             activeListViewImageRef={activeListViewImageRef}
             scrollPosRef={scrollPosRef}
+            modeRef={modeRef}
           />
         </Suspense>
       </Canvas>
