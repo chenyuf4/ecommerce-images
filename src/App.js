@@ -5,6 +5,7 @@ import "./App.scss";
 import ListView from "./components/ListView/ListView";
 import normalizeWheel from "normalize-wheel";
 import { useRef, useCallback, useEffect } from "react";
+import MobilePage from "components/MobilePage/MobilePage";
 import {
   imagesArr,
   IMAGE_GAP_SMALL,
@@ -17,6 +18,7 @@ import {
 import ProgressBar from "components/ProgressBar/ProgressBar";
 import Home from "components/Home/Home";
 import { invalidate } from "@react-three/fiber";
+import { useMediaQuery } from "react-responsive";
 function App() {
   const scrollPosRef = useRef({
     current: 0,
@@ -33,10 +35,13 @@ function App() {
     width: 0,
     height: 0,
   });
+  const isBigScreen = useMediaQuery({ query: "(min-width: 1224px)" });
+  const isLandscape = useMediaQuery({ query: "(orientation: landscape)" });
   const modeRef = useRef("list");
   const activeListViewImageRef = useRef(0);
   const onWheelHandler = useCallback(
     (e) => {
+      if (!isBigScreen || !isLandscape) return;
       const scrollLimit =
         modeRef.current === "list"
           ? (numImages - 1) * (IMAGE_WIDTH_SMALL + IMAGE_GAP_SMALL)
@@ -111,7 +116,7 @@ function App() {
 
       invalidate();
     },
-    [numImages, numRows]
+    [isBigScreen, isLandscape, numImages, numRows]
   );
 
   useEffect(() => {
@@ -166,6 +171,7 @@ function App() {
           />
         </Suspense>
       </Canvas>
+      {(!isBigScreen || !isLandscape) && <MobilePage />}
     </>
   );
 }

@@ -1,3 +1,10 @@
+@font-face {
+  font-family: "s-font";
+  font-weight: 400;
+  font-style: normal;
+  src: url("./static/fonts/s.woff2") format("woff2");
+}
+
 html,
 body {
   overflow: hidden;
@@ -5,6 +12,10 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
   overscroll-behavior-x: none;
+}
+
+.s-font {
+  font-family: "s-font";
 }
 
 #root {
