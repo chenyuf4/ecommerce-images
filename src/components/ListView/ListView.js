@@ -21,8 +21,6 @@ import "./ImageShaderMaterial";
 import React, { useCallback, useEffect } from "react";
 import * as THREE from "three";
 import useStore from "store/useStore";
-const CENTER_IMAGE_LERP_SLOW = 0.075;
-const CENTER_IMAGE_LERP_FAST = 0.12;
 
 const planeGeo = new THREE.PlaneBufferGeometry(1, 1);
 const SmallImageBlock = React.memo(({ url, index }) => {
@@ -82,108 +80,111 @@ const ListView = ({
   const mainViewGroupRef = useStore((state) => state.mainViewGroupRef);
   const listViewGroupRef = useStore((state) => state.listViewGroupRef);
 
-  const update = useCallback(() => {
-    const { current, target } = scrollPosRef.current;
-    const lerpValue = scrollPosRef.current.scrollSpeed >= 45 ? 0.08 : 0.12;
-    let newCurrentPos = current + (target - current) * lerpValue;
-    if (Math.abs(newCurrentPos - target) <= 0.01) {
-      newCurrentPos = target;
-    }
-    // update images view at the bottom
-    const imagesGroup = listViewGroupRef.current.children;
-    let newActiveImage = -1;
-    const defaultPosX =
-      -width / 2 + IMAGE_WIDTH_SMALL / 2 + imgListGroupPadding;
-
-    const defaultPosY = IMAGE_GRID_HEIGHT + IMAGE_GRID_GAP_Y;
-
-    imagesGroup.forEach((imageMesh, index) => {
-      const defaultPos =
-        modeRef.current === "list"
-          ? defaultPosX + index * (IMAGE_WIDTH_SMALL + IMAGE_GAP_SMALL)
-          : defaultPosY -
-            Math.floor(index / 3) * (IMAGE_GRID_HEIGHT + IMAGE_GRID_GAP_Y);
-      const newPos =
-        modeRef.current === "list"
-          ? defaultPos + newCurrentPos
-          : defaultPos - newCurrentPos;
-      if (
-        modeRef.current === "list" &&
-        newActiveImage === -1 &&
-        newPos >= defaultPosX - IMAGE_WIDTH_SMALL / 2
-      ) {
-        newActiveImage = index;
+  const update = useCallback(
+    (deltaValue) => {
+      const { current, target } = scrollPosRef.current;
+      const lerpValue = 0.12;
+      let newCurrentPos = current + (target - current) * lerpValue * deltaValue;
+      if (Math.abs(newCurrentPos - target) <= 0.01) {
+        newCurrentPos = target;
       }
-      if (
-        modeRef.current === "grid" &&
-        newActiveImage === -1 &&
-        index % 3 === 0 &&
-        (newPos <= IMAGE_GRID_HEIGHT + IMAGE_GRID_GAP_Y ||
-          Math.floor(index / 3) === Math.floor((imagesArr.length - 1) / 3))
-      ) {
-        newActiveImage = index;
-      }
+      // update images view at the bottom
+      const imagesGroup = listViewGroupRef.current.children;
+      let newActiveImage = -1;
+      const defaultPosX =
+        -width / 2 + IMAGE_WIDTH_SMALL / 2 + imgListGroupPadding;
 
-      if (modeRef.current === "list") imageMesh.position.x = newPos;
-      if (modeRef.current === "grid") imageMesh.position.y = newPos;
-    });
+      const defaultPosY = IMAGE_GRID_HEIGHT + IMAGE_GRID_GAP_Y;
 
-    // update main images at the center
-    const prevActiveImage = activeListViewImageRef.current;
-    // update only when active image is changed
-    if (prevActiveImage !== newActiveImage) {
       imagesGroup.forEach((imageMesh, index) => {
-        imageMesh.material.uniforms.listViewImageProgress.value =
-          index === newActiveImage || modeRef.current === "grid" ? 1.0 : 0.0;
-      });
-    }
+        const defaultPos =
+          modeRef.current === "list"
+            ? defaultPosX + index * (IMAGE_WIDTH_SMALL + IMAGE_GAP_SMALL)
+            : defaultPosY -
+              Math.floor(index / 3) * (IMAGE_GRID_HEIGHT + IMAGE_GRID_GAP_Y);
+        const newPos =
+          modeRef.current === "list"
+            ? defaultPos + newCurrentPos
+            : defaultPos - newCurrentPos;
+        if (
+          modeRef.current === "list" &&
+          newActiveImage === -1 &&
+          newPos >= defaultPosX - IMAGE_WIDTH_SMALL / 2
+        ) {
+          newActiveImage = index;
+        }
+        if (
+          modeRef.current === "grid" &&
+          newActiveImage === -1 &&
+          index % 3 === 0 &&
+          (newPos <= IMAGE_GRID_HEIGHT + IMAGE_GRID_GAP_Y ||
+            Math.floor(index / 3) === Math.floor((imagesArr.length - 1) / 3))
+        ) {
+          newActiveImage = index;
+        }
 
-    activeListViewImageRef.current = newActiveImage;
-    scrollPosRef.current.current = newCurrentPos;
-    if (newCurrentPos !== scrollPosRef.current.target) invalidate();
-  }, [
-    activeListViewImageRef,
-    invalidate,
-    listViewGroupRef,
-    modeRef,
-    scrollPosRef,
-    width,
-  ]);
-
-  const updateCenterImages = useCallback(() => {
-    const { currentZ, targetZ } = centerImagePosRef.current;
-    const lerpValue =
-      scrollPosRef.current.scrollSpeed >= 50
-        ? CENTER_IMAGE_LERP_FAST
-        : CENTER_IMAGE_LERP_SLOW;
-    let newCurrentPosZ = currentZ + (targetZ - currentZ) * lerpValue;
-    let newCurrentPosY =
-      (currentZ + (targetZ - currentZ) * lerpValue) *
-      (IMAGE_Y_GAP_CENTER / IMAGE_Z_GAP_CENTER);
-    if (Math.abs(newCurrentPosZ - targetZ) <= 0.01) {
-      newCurrentPosZ = targetZ;
-      newCurrentPosY = (targetZ * 4) / 7;
-    }
-    const centerImagesGroup = mainViewGroupRef.current.children;
-    modeRef.current === "list" &&
-      centerImagesGroup.forEach((imageMesh, index) => {
-        const defaultPosY = index * IMAGE_Y_GAP_CENTER;
-        const defaultPosZ = -index * IMAGE_Z_GAP_CENTER;
-        imageMesh.material.uniforms.planeDimension.value = [
-          1,
-          (IMAGE_HEIGHT_CENTER / IMAGE_WIDTH_CENTER) *
-            (IMAGE_DIMENSION.width / IMAGE_DIMENSION.height),
-        ];
-        imageMesh.scale.x = IMAGE_WIDTH_CENTER;
-        imageMesh.position.x = 0;
-        imageMesh.position.y = defaultPosY - newCurrentPosY;
-        imageMesh.position.z = defaultPosZ + newCurrentPosZ;
+        if (modeRef.current === "list") imageMesh.position.x = newPos;
+        if (modeRef.current === "grid") imageMesh.position.y = newPos;
       });
 
-    centerImagePosRef.current.currentY = newCurrentPosY;
-    centerImagePosRef.current.currentZ = newCurrentPosZ;
-    // if (newCurrentPosZ !== centerImagePosRef.current.targetZ) invalidate();
-  }, [centerImagePosRef, mainViewGroupRef, modeRef, scrollPosRef]);
+      // update main images at the center
+      const prevActiveImage = activeListViewImageRef.current;
+      // update only when active image is changed
+      if (prevActiveImage !== newActiveImage) {
+        imagesGroup.forEach((imageMesh, index) => {
+          imageMesh.material.uniforms.listViewImageProgress.value =
+            index === newActiveImage || modeRef.current === "grid" ? 1.0 : 0.0;
+        });
+      }
+
+      activeListViewImageRef.current = newActiveImage;
+      scrollPosRef.current.current = newCurrentPos;
+      if (newCurrentPos !== scrollPosRef.current.target) invalidate();
+    },
+    [
+      activeListViewImageRef,
+      invalidate,
+      listViewGroupRef,
+      modeRef,
+      scrollPosRef,
+      width,
+    ]
+  );
+
+  const updateCenterImages = useCallback(
+    (deltaValue) => {
+      const { currentZ, targetZ } = centerImagePosRef.current;
+      const lerpValue = 0.12;
+      let newCurrentPosZ =
+        currentZ + (targetZ - currentZ) * lerpValue * deltaValue;
+      let newCurrentPosY =
+        (currentZ + (targetZ - currentZ) * lerpValue) *
+        (IMAGE_Y_GAP_CENTER / IMAGE_Z_GAP_CENTER);
+      if (Math.abs(newCurrentPosZ - targetZ) <= 0.01) {
+        newCurrentPosZ = targetZ;
+        newCurrentPosY = (targetZ * 4) / 7;
+      }
+      const centerImagesGroup = mainViewGroupRef.current.children;
+      modeRef.current === "list" &&
+        centerImagesGroup.forEach((imageMesh, index) => {
+          const defaultPosY = index * IMAGE_Y_GAP_CENTER;
+          const defaultPosZ = -index * IMAGE_Z_GAP_CENTER;
+          imageMesh.material.uniforms.planeDimension.value = [
+            1,
+            (IMAGE_HEIGHT_CENTER / IMAGE_WIDTH_CENTER) *
+              (IMAGE_DIMENSION.width / IMAGE_DIMENSION.height),
+          ];
+          imageMesh.scale.x = IMAGE_WIDTH_CENTER;
+          imageMesh.position.x = 0;
+          imageMesh.position.y = defaultPosY - newCurrentPosY;
+          imageMesh.position.z = defaultPosZ + newCurrentPosZ;
+        });
+
+      centerImagePosRef.current.currentY = newCurrentPosY;
+      centerImagePosRef.current.currentZ = newCurrentPosZ;
+    },
+    [centerImagePosRef, mainViewGroupRef, modeRef]
+  );
 
   const resizeHandler = useCallback(() => {
     const isList = modeRef.current === "list";
@@ -281,13 +282,12 @@ const ListView = ({
     return () => window.removeEventListener("resize", resizeHandler);
   }, [resizeHandler]);
 
-  useFrame(() => {
+  useFrame((_, delta) => {
     if (!mounted.current) return;
     const { current, target } = scrollPosRef.current;
-    if (current !== target) update();
-
+    if (current !== target) update(delta * 27);
     const { currentZ, targetZ } = centerImagePosRef.current;
-    if (currentZ !== targetZ) updateCenterImages();
+    if (currentZ !== targetZ) updateCenterImages(delta * 27);
   });
 
   return (

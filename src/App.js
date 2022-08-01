@@ -48,7 +48,7 @@ function App() {
           : (numRows - 1) * (IMAGE_GRID_HEIGHT + IMAGE_GRID_GAP_Y);
       const { pixelY } = normalizeWheel(e);
       const relativeSpeed = Math.min(Math.abs(pixelY), 100);
-      const scrollSpeed = relativeSpeed * (relativeSpeed < 40 ? 0.005 : 0.015);
+      const scrollSpeed = relativeSpeed * 0.01;
       scrollPosRef.current.scrollSpeed = relativeSpeed;
       const defaultPosX =
         -canvasSizeRef.current.width / 2 +
