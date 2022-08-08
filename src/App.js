@@ -19,6 +19,13 @@ import ProgressBar from "components/ProgressBar/ProgressBar";
 import Home from "components/Home/Home";
 import { invalidate } from "@react-three/fiber";
 import { useMediaQuery } from "react-responsive";
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  Outlet,
+} from "react-router-dom";
+import Stats from "components/Stats/Stats";
 function App() {
   const scrollPosRef = useRef({
     current: 0,
@@ -127,52 +134,67 @@ function App() {
   }, [onWheelHandler]);
 
   return (
-    <>
-      <Home
-        canvasSizeRef={canvasSizeRef}
-        scrollPosRef={scrollPosRef}
-        activeListViewImageRef={activeListViewImageRef}
-        modeRef={modeRef}
-      />
-      <Canvas
-        frameloop="demand"
-        dpr={Math.max(window.devicePixelRatio, 2)}
-        linear={true}
-        flat={true}
-        gl={{ antialias: true, alpha: true }}
-        onCreated={(state) => {
-          const { viewport } = state;
-          const { width, height } = viewport;
-          canvasSizeRef.current.width = width;
-          canvasSizeRef.current.height = height;
-        }}
-        resize={{ scroll: true }}
-      >
-        <Suspense fallback={null}>
-          <PerspectiveCamera
-            makeDefault
-            position={[0, 0, 5]}
-            near={0.1}
-            far={100}
-            fov={75}
-          />
-          <color attach="background" args={["#ffffff"]} />
-          <ListView
-            canvasSizeRef={canvasSizeRef}
-            centerImagePosRef={centerImagePosRef}
-            scrollPosRef={scrollPosRef}
-            activeListViewImageRef={activeListViewImageRef}
-            modeRef={modeRef}
-          />
-          <ProgressBar
-            activeListViewImageRef={activeListViewImageRef}
-            scrollPosRef={scrollPosRef}
-            modeRef={modeRef}
-          />
-        </Suspense>
-      </Canvas>
-      {(!isBigScreen || !isLandscape) && <MobilePage />}
-    </>
+    <Router>
+      <Routes>
+        <Route
+          path=""
+          element={
+            <>
+              <Home
+                canvasSizeRef={canvasSizeRef}
+                scrollPosRef={scrollPosRef}
+                activeListViewImageRef={activeListViewImageRef}
+                modeRef={modeRef}
+              />
+              <Outlet />
+              {!isBigScreen || !isLandscape ? (
+                <MobilePage />
+              ) : (
+                <Canvas
+                  frameloop="demand"
+                  dpr={Math.max(window.devicePixelRatio, 2)}
+                  linear={true}
+                  flat={true}
+                  gl={{ antialias: true, alpha: true }}
+                  onCreated={(state) => {
+                    const { viewport } = state;
+                    const { width, height } = viewport;
+                    canvasSizeRef.current.width = width;
+                    canvasSizeRef.current.height = height;
+                  }}
+                  resize={{ scroll: true }}
+                >
+                  <Suspense fallback={null}>
+                    <PerspectiveCamera
+                      makeDefault
+                      position={[0, 0, 5]}
+                      near={0.1}
+                      far={100}
+                      fov={75}
+                    />
+                    <color attach="background" args={["#ffffff"]} />
+                    <ListView
+                      canvasSizeRef={canvasSizeRef}
+                      centerImagePosRef={centerImagePosRef}
+                      scrollPosRef={scrollPosRef}
+                      activeListViewImageRef={activeListViewImageRef}
+                      modeRef={modeRef}
+                    />
+                    <ProgressBar
+                      activeListViewImageRef={activeListViewImageRef}
+                      scrollPosRef={scrollPosRef}
+                      modeRef={modeRef}
+                    />
+                  </Suspense>
+                </Canvas>
+              )}
+            </>
+          }
+        >
+          <Route path="/debug" element={<Stats />} />
+        </Route>
+      </Routes>
+    </Router>
   );
 }
 
